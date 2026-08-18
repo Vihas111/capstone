@@ -1,21 +1,27 @@
 """
-Tanimoto-similarity k-NN mechanism-label transfer -- findings/findings.md
+Similarity-weighted k-NN mechanism-label transfer -- findings/findings.md
 item 2 ("k-NN similarity transfer, as an ensemble member, not a
 replacement"). This is the never-built similarity_gapfiller.py's actual
 job, but framed from the start as an ensemble component to blend with
 scripts/train_mechanism_predictor.py's linear model, not a standalone
 competitor (per the doc's own correction to its original framing).
 
-For a query drug's fingerprint, finds its K nearest TRAIN-split neighbors
-by Tanimoto similarity (the standard metric for binary Morgan/ECFP bits --
-intersection-over-union of the "on" bits) and predicts each label's
-probability as the similarity-weighted fraction of those neighbors that
-have that label. Fully vectorized (one similarity matrix, one topk, one
-gather) -- no per-drug Python loop.
+For a query drug, finds its K nearest TRAIN-split neighbors by similarity
+and predicts each label's probability as the similarity-weighted fraction
+of those neighbors that have that label. Fully vectorized (one similarity
+matrix, one topk, one gather) -- no per-drug Python loop.
 
-Usage (as a library, from scripts/run_mechanism_knn_ensemble_kfold.py):
-    from scripts.mechanism_knn_transfer import knn_transfer_probs
-    probs = knn_transfer_probs(x_query, x_train, y_train, k=20)
+Two similarity metrics, both feeding the same vote logic:
+  - tanimoto_similarity: for binary Morgan/ECFP fingerprints (intersection
+    over union of the "on" bits) -- the original item 2 result.
+  - cosine_similarity: for continuous embeddings (e.g. ChemBERTa, see
+    scripts/build_chemberta_embeddings.py / scripts/run_mechanism_embedding_kfold.py)
+    -- Tanimoto isn't defined for non-binary vectors, cosine is the
+    standard substitute for dense embedding spaces.
+
+Usage (as a library):
+    from scripts.mechanism_knn_transfer import knn_transfer_probs, tanimoto_similarity, cosine_similarity
+    probs = knn_transfer_probs(x_query, x_train, y_train, k=20, similarity_fn=tanimoto_similarity)
 """
 
 import torch
@@ -33,14 +39,27 @@ def tanimoto_similarity(x_query, x_train):
     return torch.where(union > 0, intersection / union.clamp(min=1e-8), torch.zeros_like(intersection))
 
 
-def knn_transfer_probs(x_query, x_train, y_train, k=20):
-    """Returns [Nq, C] predicted label probabilities: for each query drug,
-    the similarity-weighted vote of its k most Tanimoto-similar train
-    drugs' binary labels. Query drugs with zero similarity to every train
-    drug (no shared fingerprint bits at all) get a uniform-average
-    fallback over their (zero-weighted) top-k rather than NaN/zero."""
+def cosine_similarity(x_query, x_train):
+    """x_query: [Nq, D] continuous. x_train: [Nt, D] continuous. Returns
+    [Nq, Nt] cosine similarity -- the standard metric for dense embeddings
+    (e.g. ChemBERTa), where Tanimoto (defined for binary vectors) doesn't
+    apply. Clamped to >=0 so it plugs into knn_transfer_probs's weighted
+    vote the same way Tanimoto similarity does (always non-negative)."""
 
-    sim = tanimoto_similarity(x_query, x_train)
+    q_norm = torch.nn.functional.normalize(x_query, dim=1)
+    t_norm = torch.nn.functional.normalize(x_train, dim=1)
+    return (q_norm @ t_norm.T).clamp(min=0.0)
+
+
+def knn_transfer_probs(x_query, x_train, y_train, k=20, similarity_fn=tanimoto_similarity):
+    """Returns [Nq, C] predicted label probabilities: for each query drug,
+    the similarity-weighted vote of its k most similar train drugs' binary
+    labels (similarity per similarity_fn -- tanimoto_similarity for binary
+    fingerprints, cosine_similarity for continuous embeddings). Query drugs
+    with zero similarity to every train drug get a uniform-average fallback
+    over their (zero-weighted) top-k rather than NaN/zero."""
+
+    sim = similarity_fn(x_query, x_train)
     k = min(k, x_train.shape[0])
     topk_sim, topk_idx = torch.topk(sim, k=k, dim=1)
 

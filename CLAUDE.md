@@ -566,6 +566,42 @@ block later ones.
    `--predict-no-knn-blend` reproduces the old linear-only behavior exactly;
    plain (non-`--predict`) output is still byte-for-byte identical to the
    saved `cases/*.json` examples.
+
+   **Item 3 (pretrained embeddings) tried and DONE (2026-08-18) — two
+   representation changes, both honest negative results, neither
+   deployed.** ChemBERTa (frozen, mean-pooled, `scripts/build_chemberta_embeddings.py`
+   + `scripts/run_mechanism_embedding_kfold.py`) and RDKit physicochemical
+   descriptors (`scripts/build_physchem_descriptors.py` +
+   `scripts/run_mechanism_physchem_kfold.py`, testing the original
+   2D-vs-3D hypothesis) both underperformed the deployed fp Tanimoto-knn
+   blend (0.293 ± 0.016) in every k-fold configuration, including
+   concatenated with the fingerprint. Full tables in findings/findings.md's
+   "Item 3 result" section. Full end-to-end ChemBERTa fine-tuning was
+   considered and explicitly not attempted (real overfitting risk at
+   ~3,100 training drugs for a 44M-param model, and a specific risk it
+   would hurt generalization to genuinely novel drugs — the actual goal —
+   even while improving same-population k-fold numbers). **Conclusion**:
+   two independent representation changes failing is a real signal, not
+   bad luck twice — the deployed ensemble is treated as this data scale's
+   practical ceiling for representation-search approaches now.
+
+   **Item 4 (PK/PD model splitting) also DONE (2026-08-18) — a wash, with
+   one useful footnote.** `scripts/run_mechanism_pkpd_split_kfold.py`:
+   3 separate kind-specific linear models (each with its own early-stopping)
+   scored statistically identically to the joint model, both alone
+   (0.259 ± 0.011 vs. 0.258 ± 0.014) and blended with the k-NN ensemble
+   (0.294 ± 0.015 vs. deployed 0.293 ± 0.016). Confirmed the hypothesis's
+   premise was real — joint early-stopping picks a mismatched epoch for
+   enzyme specifically (wants ~2x more training than the joint model's
+   average stopping point) — but correcting for it didn't move the final
+   score. Not deployed (no reason to add 3x the model complexity for a
+   result indistinguishable from what's already live).
+
+   **All four of findings.md's originally-proposed interventions are now
+   tried and reported.** The deployed fingerprint + Tanimoto-knn blend
+   (0.293 ± 0.016 macro-AP, 5-fold) is the current best validated
+   configuration for this gap-filler — see findings/findings.md for the
+   full comparative evidence across all attempts.
 5. **Name/synonym resolution.** `scripts/mechanism_lookup.py` only does
    exact-match against DrugBank's primary name — "Coumadin" (brand name)
    doesn't resolve to Warfarin. No `drug_synonyms.jsonl` exists in this repo.

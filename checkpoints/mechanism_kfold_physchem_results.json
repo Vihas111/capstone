@@ -1,0 +1,540 @@
+{
+  "k": 5,
+  "fp_knn_k": 40,
+  "descriptor_names": [
+    "MolWt",
+    "MolLogP",
+    "MolMR",
+    "TPSA",
+    "LabuteASA",
+    "NumHDonors",
+    "NumHAcceptors",
+    "NumRotatableBonds",
+    "NumAromaticRings",
+    "NumAliphaticRings",
+    "NumSaturatedRings",
+    "RingCount",
+    "FractionCSP3",
+    "HeavyAtomCount",
+    "NumHeteroatoms",
+    "NHOHCount",
+    "NOCount",
+    "NumValenceElectrons",
+    "NumSaturatedHeterocycles",
+    "NumAromaticHeterocycles",
+    "BalabanJ",
+    "BertzCT",
+    "NumStereoCenters",
+    "FormalCharge"
+  ],
+  "variants": {
+    "physchem_linear": {
+      "macro_ap_mean": 0.06412669569253922,
+      "macro_ap_std": 0.0015834147742919248,
+      "micro_ap_mean": 0.039200694859027864,
+      "micro_ap_std": 0.0018040222713185865,
+      "per_kind": {
+        "enzyme": {
+          "macro_ap_mean": 0.05379536226391792,
+          "macro_ap_std": 0.005135268030564086
+        },
+        "target": {
+          "macro_ap_mean": 0.0679776206612587,
+          "macro_ap_std": 0.002672006614734234
+        },
+        "transporter": {
+          "macro_ap_mean": 0.05872856080532074,
+          "macro_ap_std": 0.009010180465412123
+        }
+      },
+      "per_fold": [
+        {
+          "macro_ap": 0.06465168297290802,
+          "micro_ap": 0.04023817181587219,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.0592925027012825,
+              "micro_ap": 0.05750026926398277,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.06885150074958801,
+              "micro_ap": 0.03357608988881111,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.051471468061208725,
+              "micro_ap": 0.0472651943564415,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.061716362833976746,
+          "micro_ap": 0.03724341839551926,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.04942804202437401,
+              "micro_ap": 0.04802266135811806,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.06548909097909927,
+              "micro_ap": 0.032719217240810394,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.059175584465265274,
+              "micro_ap": 0.043037962168455124,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.06487002223730087,
+          "micro_ap": 0.039228904992341995,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.050239626318216324,
+              "micro_ap": 0.0514632873237133,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.07095322012901306,
+              "micro_ap": 0.034923721104860306,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.053760141134262085,
+              "micro_ap": 0.04424985125660896,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.06586793065071106,
+          "micro_ap": 0.03768276423215866,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.059514209628105164,
+              "micro_ap": 0.0566973015666008,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.06972837448120117,
+              "micro_ap": 0.02971012517809868,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.05518868565559387,
+              "micro_ap": 0.0485745333135128,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.06352747976779938,
+          "micro_ap": 0.04161021485924721,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.05050243064761162,
+              "micro_ap": 0.05825521796941757,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.06486591696739197,
+              "micro_ap": 0.03435303270816803,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.07404692471027374,
+              "micro_ap": 0.049384359270334244,
+              "n_labels": 56
+            }
+          }
+        }
+      ]
+    },
+    "concat_linear": {
+      "macro_ap_mean": 0.24027067720890044,
+      "macro_ap_std": 0.01206398618631666,
+      "micro_ap_mean": 0.15431243777275086,
+      "micro_ap_std": 0.019686144784652776,
+      "per_kind": {
+        "enzyme": {
+          "macro_ap_mean": 0.13578059375286103,
+          "macro_ap_std": 0.02927312754049257
+        },
+        "target": {
+          "macro_ap_mean": 0.2861540913581848,
+          "macro_ap_std": 0.013927396192643568
+        },
+        "transporter": {
+          "macro_ap_mean": 0.15145639777183534,
+          "macro_ap_std": 0.014934588078936354
+        }
+      },
+      "per_fold": [
+        {
+          "macro_ap": 0.23211665451526642,
+          "micro_ap": 0.14798878133296967,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.12717951834201813,
+              "micro_ap": 0.17483925819396973,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.2761352062225342,
+              "micro_ap": 0.1737428456544876,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.16102871298789978,
+              "micro_ap": 0.11536239087581635,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.24489182233810425,
+          "micro_ap": 0.132400780916214,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.10280414670705795,
+              "micro_ap": 0.15886259078979492,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.2975945472717285,
+              "micro_ap": 0.16928160190582275,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.1697920262813568,
+              "micro_ap": 0.11176648736000061,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.2595122754573822,
+          "micro_ap": 0.18407735228538513,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.18140366673469543,
+              "micro_ap": 0.18023589253425598,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.3045671880245209,
+              "micro_ap": 0.22790482640266418,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.13521280884742737,
+              "micro_ap": 0.139153391122818,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.23300577700138092,
+          "micro_ap": 0.1620018631219864,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.12436123937368393,
+              "micro_ap": 0.1695573627948761,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.27834367752075195,
+              "micro_ap": 0.17440873384475708,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.15376241505146027,
+              "micro_ap": 0.13220064342021942,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.23182685673236847,
+          "micro_ap": 0.1450934112071991,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.14315439760684967,
+              "micro_ap": 0.21234801411628723,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.27412983775138855,
+              "micro_ap": 0.15634454786777496,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.1374860256910324,
+              "micro_ap": 0.10563699156045914,
+              "n_labels": 56
+            }
+          }
+        }
+      ]
+    },
+    "concat_blend": {
+      "macro_ap_mean": 0.2771364152431488,
+      "macro_ap_std": 0.016840587523667818,
+      "micro_ap_mean": 0.19890492260456086,
+      "micro_ap_std": 0.01831800278703295,
+      "per_kind": {
+        "enzyme": {
+          "macro_ap_mean": 0.15242627114057541,
+          "macro_ap_std": 0.027459390973361815
+        },
+        "target": {
+          "macro_ap_mean": 0.33254329562187196,
+          "macro_ap_std": 0.02126973168539877
+        },
+        "transporter": {
+          "macro_ap_mean": 0.16793205440044404,
+          "macro_ap_std": 0.02276845454480525
+        }
+      },
+      "per_fold": [
+        {
+          "macro_ap": 0.2626630365848541,
+          "micro_ap": 0.18948937952518463,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.13336288928985596,
+              "micro_ap": 0.2041788399219513,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.3167768716812134,
+              "micro_ap": 0.22017881274223328,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.17567934095859528,
+              "micro_ap": 0.1370355784893036,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.29266369342803955,
+          "micro_ap": 0.17559918761253357,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.12266353517770767,
+              "micro_ap": 0.19166706502437592,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.35558319091796875,
+              "micro_ap": 0.23579637706279755,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.20349793136119843,
+              "micro_ap": 0.12829461693763733,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.29699257016181946,
+          "micro_ap": 0.2208642214536667,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.18936492502689362,
+              "micro_ap": 0.21894414722919464,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.35529446601867676,
+              "micro_ap": 0.2774912118911743,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.14524886012077332,
+              "micro_ap": 0.1505122035741806,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.2607246935367584,
+          "micro_ap": 0.1950591504573822,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.1454913467168808,
+              "micro_ap": 0.20214687287807465,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.31197068095207214,
+              "micro_ap": 0.2163165807723999,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.16088302433490753,
+              "micro_ap": 0.15046867728233337,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.27263808250427246,
+          "micro_ap": 0.21351267397403717,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.171248659491539,
+              "micro_ap": 0.26946836709976196,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.3230912685394287,
+              "micro_ap": 0.24270594120025635,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.1543511152267456,
+              "micro_ap": 0.12171491980552673,
+              "n_labels": 56
+            }
+          }
+        }
+      ]
+    },
+    "all3_blend": {
+      "macro_ap_mean": 0.27841930389404296,
+      "macro_ap_std": 0.015521254190125806,
+      "micro_ap_mean": 0.1858707159757614,
+      "micro_ap_std": 0.01537458607395966,
+      "per_kind": {
+        "enzyme": {
+          "macro_ap_mean": 0.15352311730384827,
+          "macro_ap_std": 0.03290982115122645
+        },
+        "target": {
+          "macro_ap_mean": 0.33478875160217286,
+          "macro_ap_std": 0.01790263707294794
+        },
+        "transporter": {
+          "macro_ap_mean": 0.16469353437423706,
+          "macro_ap_std": 0.018481210421743197
+        }
+      },
+      "per_fold": [
+        {
+          "macro_ap": 0.2616446614265442,
+          "micro_ap": 0.17867037653923035,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.13231395184993744,
+              "micro_ap": 0.19550146162509918,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.3161097764968872,
+              "micro_ap": 0.2158903032541275,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.17298436164855957,
+              "micro_ap": 0.12454746663570404,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.28524917364120483,
+          "micro_ap": 0.16750939190387726,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.11677727103233337,
+              "micro_ap": 0.18148842453956604,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.348376601934433,
+              "micro_ap": 0.23263777792453766,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.1929897516965866,
+              "micro_ap": 0.12438657134771347,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.29831594228744507,
+          "micro_ap": 0.19770893454551697,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.19136008620262146,
+              "micro_ap": 0.21048380434513092,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.35630765557289124,
+              "micro_ap": 0.25963830947875977,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.14724205434322357,
+              "micro_ap": 0.15109752118587494,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.2636913061141968,
+          "micro_ap": 0.18003955483436584,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.1423909217119217,
+              "micro_ap": 0.19556255638599396,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.3179006278514862,
+              "micro_ap": 0.21178482472896576,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.1572667509317398,
+              "micro_ap": 0.13929864764213562,
+              "n_labels": 56
+            }
+          }
+        },
+        {
+          "macro_ap": 0.283195436000824,
+          "micro_ap": 0.20542532205581665,
+          "per_kind": {
+            "enzyme": {
+              "macro_ap": 0.18477335572242737,
+              "micro_ap": 0.2587566673755646,
+              "n_labels": 77
+            },
+            "target": {
+              "macro_ap": 0.3352490961551666,
+              "micro_ap": 0.2493905872106552,
+              "n_labels": 289
+            },
+            "transporter": {
+              "macro_ap": 0.15298475325107574,
+              "micro_ap": 0.11983887106180191,
+              "n_labels": 56
+            }
+          }
+        }
+      ]
+    }
+  }
+}

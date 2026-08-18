@@ -137,25 +137,26 @@ That's a real signal, not a reason to try a third reweighting variant:
    errors, so an ensemble is a plausible real win even if the deployed model
    itself is never replaced.
 
-3. **Pretrained molecular embeddings — condition now met (item 1 confirmed
-   a representation problem, not a data-volume problem).** Self-training
-   already tested "more data, same representation" and it didn't help,
-   consistent with (not just "weakly suggestive of") this conclusion. Still
-   the highest-effort item of the four, and item 2 is cheaper — try that
-   first unless there's a reason to skip ahead. If pursued, evaluate on the
-   existing k-fold splits so it's a fair comparison against the
-   0.258 ± 0.013 baseline (and separately against per-kind baselines
-   enzyme 0.143 ± 0.027 / transporter 0.154 ± 0.009 / target 0.310 ± 0.011),
-   not a new single-split number that repeats this round's original
-   mistake.
+3. ✅ **DONE (2026-08-18, see write-up below) — tried two representation
+   changes, both honest negative results, neither deployed.** Pretrained
+   ChemBERTa embeddings (frozen, mean-pooled) and RDKit physicochemical
+   descriptors (testing this doc's own original 2D-vs-3D hypothesis) both
+   underperformed the deployed fp Tanimoto-knn blend (0.293 ± 0.016) in
+   every k-fold configuration tried, including concatenated with the
+   existing fingerprint. See "Item 3 result" section below for the full
+   tables. Two independent representation changes failing is a real signal
+   the deployed ensemble is near this data scale's practical ceiling for
+   this family of approaches, not bad luck twice.
 
-4. **PK/PD (now: transporter-specific) model splitting** — still not
-   attempted. Lowest priority of the four: per-category pos_weight already
-   tested the "make the loss pay more attention to the weak kind" idea via
-   a cheaper mechanism and it didn't help, which is weak evidence a full
-   separate model/head for transporter wouldn't help either (though not
-   conclusive — a separate model changes capacity allocation, not just loss
-   weighting).
+4. ✅ **DONE (2026-08-18, see write-up below) — a wash, with one genuinely
+   interesting mechanistic footnote.** PK/PD (kind-specific) model
+   splitting: three separate linear models (enzyme/target/transporter) with
+   independent early-stopping, instead of one joint model. Confirmed the
+   real mechanism this was testing (joint early-stopping picks a
+   suboptimal epoch for enzyme specifically — it wants ~2x more training
+   than the joint model gives it) but correcting for that didn't move the
+   final macro-AP beyond noise. All four originally-proposed interventions
+   are now tried and reported.
 
 **Do not** re-run the per-category pos_weight or self-training experiments
 with mildly different hyperparameters expecting a different outcome without
@@ -298,3 +299,134 @@ switches to the blend's real k-fold numbers (0.293 ± 0.016 / 0.184 ± 0.017);
 `"predict_method": "linear"`; plain (non-`--predict`) output is still
 byte-for-byte identical to the saved `cases/*.json` examples, confirmed by
 diff against `cases/case1_documented_interaction.json`.
+
+---
+
+## Item 3 result (2026-08-18): two representation changes, both negative
+
+Ran on the RTX 4060 laptop. Both evaluated on the same 5-fold splits as
+items 1/2, against the same reference numbers (fp linear alone:
+0.258 ± 0.014; deployed fp Tanimoto-knn blend: 0.293 ± 0.016).
+
+### Attempt A: pretrained ChemBERTa embeddings
+
+`scripts/build_chemberta_embeddings.py` (frozen `seyonec/ChemBERTa-zinc-base-v1`,
+masked-mean-pooled, 768-dim) + `scripts/run_mechanism_embedding_kfold.py`.
+Rationale: item 1 established the model's weakness is a representation
+problem, and a pretrained encoder trained on a much larger, more diverse
+chemical space (~250k ZINC15 molecules) than this project's ~3,880-drug
+labeled population was the natural next lever — specifically aimed at
+generalizing to genuinely novel drugs/scaffolds, not just scoring better on
+drugs already similar to the training pool (which the Tanimoto k-NN already
+covers).
+
+| variant | macro-AP (5-fold) | vs. deployed baseline |
+|---|---|---|
+| embed_linear (ChemBERTa alone) | 0.164 ± 0.011 | far weaker |
+| embed_knn (cosine-knn in ChemBERTa space) | 0.174 ± 0.014 | far weaker |
+| embed_blend (average of the two above) | 0.187 ± 0.015 | far weaker |
+| concat_linear (fingerprint + ChemBERTa) | 0.263 ± 0.011 | **loses to deployed blend in 5/5 folds** |
+| all4_blend (fp_linear + fp_knn + embed_linear + embed_knn) | 0.248 ± 0.010 | worse than deployed blend — dilutes the good signal |
+
+Full results: `checkpoints/mechanism_kfold_embedding_results.json`.
+
+**Read**: frozen, mean-pooled ChemBERTa embeddings carry substantially less
+task-relevant signal here than raw Morgan/ECFP bits — plausibly because
+ChemBERTa was pretrained with masked-language-modeling on SMILES syntax
+(not a mechanism/binding-relevant objective), and mean-pooling an
+un-fine-tuned BERT-style model is a known-weak sentence-embedding strategy
+in the wider literature (this is why Sentence-BERT-style fine-tuning
+exists). Full end-to-end fine-tuning was considered and explicitly **not**
+attempted: only ~3,100 training drugs to fine-tune a 44M-parameter model
+against is a real overfitting risk (this project already showed capacity
+doesn't help at this scale — linear beat a 256-128-hidden MLP in §3b, a
+much smaller capacity jump than a full transformer fine-tune would be), and
+there's a specific risk it would *actively hurt* generalization to
+genuinely novel drugs (the actual goal) by pulling the representation
+toward DrugBank's narrow population even while looking like a win on the
+k-fold splits (same population).
+
+### Attempt B: RDKit physicochemical descriptors
+
+`scripts/build_physchem_descriptors.py` (24 fixed, named ADMET/QSAR
+descriptors — MolWt, LogP, TPSA, H-bond donor/acceptor counts, rotatable
+bonds, ring counts, etc.) + `scripts/run_mechanism_physchem_kfold.py`
+(z-score normalized, train-split statistics only, per fold). Rationale:
+testing this doc's own *original* hypothesis (from before the ChemBERTa
+detour) that transporter/PK substrate recognition may depend more on
+global physicochemical properties than the local 2D substructure patterns
+Morgan/ECFP encodes — this was never actually tested; ChemBERTa tested a
+different fix (pretrained representation) instead.
+
+| variant | macro-AP (5-fold) | vs. deployed baseline |
+|---|---|---|
+| physchem_linear (24 descriptors alone) | 0.064 ± 0.002 | far weaker (too low-dimensional alone, expected) |
+| concat_linear (fingerprint + physchem) | 0.240 ± 0.012 | **loses to fp-alone in 5/5 folds** |
+| concat_blend (concat_linear + fp_knn averaged) | 0.277 ± 0.017 | **loses to deployed blend in 5/5 folds** |
+| all3_blend (fp_linear + fp_knn + concat_linear) | 0.278 ± 0.016 | also loses to deployed blend |
+
+Full results: `checkpoints/mechanism_kfold_physchem_results.json`.
+
+**Read**: adding physchem descriptors didn't just fail to help — concatenating
+them onto the fingerprint made the plain linear model slightly *worse*
+than fingerprints alone (0.240 vs 0.258), consistently across every fold.
+The 3D/physicochemical hypothesis for why transporters specifically are
+hard does not hold up via this descriptor set. (Note these are 2D-computed
+approximations of physicochemical properties, e.g. TPSA is a topological
+not a true-3D surface-area calculation — a literal 3D-conformer-based
+descriptor set was considered but not attempted, given attempt A and B
+together already show two different representation changes failing to add
+signal beyond what the fingerprint+Tanimoto-knn combination already
+captures.)
+
+**Neither attempt is deployed.** Both are honest negative results, reported
+per this project's established convention rather than discarded quietly.
+**Conclusion**: two independent representation changes both failing to beat
+the deployed ensemble is a real signal — the fingerprint + Tanimoto-knn
+blend (0.293 ± 0.016) is treated as this data scale's practical ceiling for
+representation-search approaches until a genuinely new hypothesis (not a
+third representation variant) comes along.
+
+---
+
+## Item 4 result (2026-08-18): PK/PD model splitting — a wash, with one useful footnote
+
+`scripts/run_mechanism_pkpd_split_kfold.py`. This tests a genuinely
+DIFFERENT mechanism than the already-failed per-category pos_weight
+ablation (checkpoints/mechanism_kfold_pcw_results.json): a plain linear
+layer already has a fully separate weight vector per output label, so
+there's no shared-capacity bottleneck splitting into 3 models could
+relieve. What splitting DOES change is the early-stopping criterion — each
+kind-specific model watches its OWN val macro-AP, not the joint 422-label
+average, which target (the strongest, most numerous kind) otherwise
+dominates.
+
+| variant | macro-AP (5-fold) | vs. joint model reference |
+|---|---|---|
+| joint linear (existing baseline) | 0.258 ± 0.014 | — |
+| split_linear (3 kind-specific models) | 0.259 ± 0.011 | statistically identical |
+| deployed fp Tanimoto-knn blend (existing) | 0.293 ± 0.016 | — |
+| split_blend (split_linear + fp_knn) | 0.294 ± 0.015 | statistically identical (4/5 folds marginally higher, mean diff +0.001 — noise, not signal) |
+
+**The interesting part**: the hypothesis's premise was correct, and worth
+knowing even though it didn't pay off. Mean best-epoch across folds: joint
+model 24.4, but **enzyme 44.8** (wants nearly 2x more training than the
+joint model gives it), target 18.8 (wants to stop earlier), transporter
+23.6 (close to the joint average). Joint early-stopping genuinely does
+pick a mismatched epoch for enzyme specifically. But giving each kind its
+own correctly-timed stopping point didn't translate into a better final
+score — whatever enzyme's model learns in those extra ~20 epochs isn't
+enough additional signal to move macro-AP beyond noise.
+
+**Not deployed** — no reason to add the complexity of 3 separate models
+(3x the checkpoints, 3x the training/serving code) for a result
+indistinguishable from the existing single joint model.
+
+**All four of this doc's originally-proposed interventions are now tried
+and reported**: threshold tuning (shipped), k-fold CV (shipped, corrected
+the headline number), self-training (tried, no gain), per-category
+pos_weight (tried, no gain), k-NN ensemble (tried, real win, shipped),
+pretrained embeddings (tried twice — ChemBERTa and physchem descriptors —
+both no gain), PK/PD model splitting (tried, wash). The deployed
+fingerprint + Tanimoto-knn blend (0.293 ± 0.016 macro-AP, 5-fold) stands as
+the current best validated configuration for this gap-filler.
