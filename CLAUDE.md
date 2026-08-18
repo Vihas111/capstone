@@ -111,15 +111,42 @@ cheap precomputed-bytes substring pre-filter before JSON-parsing, so no
 persistent index needed at this query volume).
 
 **Known limitations**: name resolution is exact-match only, no brand-name/
-synonym table (see above); doesn't cover undocumented drug pairs or unseen
-drugs at all (that's the ML gap-filler the old CLAUDE.md describes and that
-doesn't exist in this folder yet — see §3); `likely_pk_effects` only covers
+synonym table (see above); `likely_pk_effects` only covers
 enzymes/transporters (not targets/carriers, where the equivalent
 pharmacodynamic reasoning is murkier and wasn't in the ported prototype
 either) and is a hint for the downstream reasoning step, not a scored/ranked
 clinical severity assessment — that's left to the downstream model with real
 patient data and retrieved literature, same separation of concerns the old
-design called for.
+design called for. Undocumented drug pairs (both drugs known, pair
+undocumented) ARE partially covered via `mechanistic_overlaps` — and as of
+2026-08-18 this is no longer just "partially," it's precisely quantified:
+`scripts/evaluate_mechanistic_overlap_link_prediction.py` benchmarked the
+overlap signal as a link predictor against DrugBank's own documented
+interactions (50k positive/50k negative sampled pairs, both drugs
+profile-bearing) and found **96.6% precision, 42.1% recall** at the "any
+shared protein" threshold (ROC-AUC 0.704) — trustworthy whenever it fires,
+but real DDIs that don't reduce to shared enzyme/target/transporter/
+carrier overlap (the majority, ~58%) are still missed. See
+findings/findings.md's "Link-prediction benchmark" section for the full
+comparison against DeepDDI/SumGNN/medicX. Genuinely unseen drugs (no
+DrugBank profile at all) are the ML gap-filler's job (§3b/§3c).
+
+**Follow-up (2026-08-18, same session): a pair-level classifier was tried
+to close that 58% recall gap — real signal found, but smaller than it
+first looked.** Richer features (fingerprint similarity + profile size)
+jumped ROC-AUC to 0.874, but an ablation showed profile size (not
+chemistry) was driving nearly all of it — a well-known "degree bias"
+confound in link-prediction benchmarks (bigger documented profiles
+mechanically create more overlap chances, independent of true biology).
+Corrected with size-matched negative sampling (standard fix): **honest
+ROC-AUC is 0.650 ± 0.003** — real, consistent signal, driven by genuine
+enzyme/target overlap and fingerprint similarity once the size shortcut is
+removed, but meaningfully more modest than either the naive baseline
+(0.704) or the size-confounded rich-feature model (0.874) suggested. Full
+write-up: findings/findings.md's "Pair-level link classifier" section.
+**Not deployed** — pending a decision on whether the honest 0.65 signal is
+worth adding to `mechanism_lookup.py` as a new labeled field, and if so,
+using the debiased (size-features-dropped) model, not the inflated one.
 
 ## 2. What was cleaned up (2026-08-10, extended 2026-08-17)
 

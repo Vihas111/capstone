@@ -430,3 +430,285 @@ pretrained embeddings (tried twice — ChemBERTa and physchem descriptors —
 both no gain), PK/PD model splitting (tried, wash). The deployed
 fingerprint + Tanimoto-knn blend (0.293 ± 0.016 macro-AP, 5-fold) stands as
 the current best validated configuration for this gap-filler.
+
+---
+
+## Comparison to published DDI models: SumGNN (2026-08-18)
+
+Requested comparison against a standard/popular published DDI model.
+Grounded in the actual paper (Yu et al., *Bioinformatics* 2021,
+"SumGNN: Multi-typed Drug Interaction Prediction via Efficient Knowledge
+Graph Summarization") and its GitHub repo, not recalled from memory —
+sources: [arXiv:2010.01450](https://arxiv.org/abs/2010.01450),
+[Bioinformatics 37(18):2988](https://academic.oup.com/bioinformatics/article/37/18/2988/6189090),
+[github.com/yueyu1030/SumGNN](https://github.com/yueyu1030/SumGNN).
+
+**What SumGNN actually does**: given a drug *pair*, classifies which of
+~86 DrugBank interaction types applies (or predicts across 200 TWOSIDES
+side-effect types, multi-label). Uses the DrugBank DDI network (1,709
+drugs, 136,351 interactions) or TWOSIDES (645 drugs, 46,221 interactions),
+plus a large auxiliary biomedical knowledge graph (Hetionet — 33,765
+nodes, 1.69M edges, 23 relation types) as extra context beyond the two
+drugs themselves. **Evaluated with a random 7:1:2 transductive split** —
+both drugs in every test pair have already been seen (in other pairs)
+during training; the paper does not test genuinely unseen drugs. Reported
+numbers: DrugBank F1 86.85, accuracy 92.66; TWOSIDES ROC-AUC 94.86, PR-AUC
+93.35.
+
+**Why the raw numbers aren't comparable to either of this project's
+tracks**:
+- *Vs. RGCN v2* (the architecturally closer track — pair-graph → GNN →
+  label prediction): looks dramatically worse on paper (macro-AP ~0.02 vs.
+  SumGNN's PR-AUC 93), but RGCN v2 is evaluated **cold-start by drug**
+  (genuinely unseen drugs at test time — SumGNN's benchmark never tests
+  this), against ~4,486 label classes vs. SumGNN's ~86–200 (macro-AP over
+  a much larger, sparser label space is mechanically lower regardless of
+  underlying model quality — the same effect this project's own label
+  masking already accounts for), using a different metric family
+  (macro-AP vs. thresholded F1/accuracy).
+- *Vs. the mechanism gap-filler* (this session's focus): not comparable at
+  all — different task shape. SumGNN classifies a pair's interaction type;
+  the gap-filler predicts a *single* drug's mechanism profile from
+  structure, then infers pairwise interaction via deterministic
+  rule-based overlap (`scripts/mechanism_lookup.py`'s `shared()`), not a
+  learned pair-classifier.
+
+**The one point worth taking seriously**: SumGNN's benchmark is
+transductive — both drugs already known. For DrugBank's own DDI network
+specifically, a meaningful chunk of what SumGNN is *learning* to predict
+is information DrugBank already documents outright for those same drugs.
+`scripts/mechanism_lookup.py`'s deterministic path already retrieves that
+with near-100% reliability, zero training required, for exactly the
+population SumGNN's benchmark draws from — because it's a lookup, not a
+prediction. SumGNN's genuinely hard, useful case (a pair involving a truly
+novel/undocumented drug) is not what its own paper evaluates.
+
+**Whether the auxiliary-knowledge-graph idea (Hetionet) is worth
+incorporating here**: assessed and **not recommended for the mechanism
+gap-filler specifically**, for a structural reason, not a difficulty one —
+a knowledge graph's benefit is bounded by whether the target drug has ANY
+known edges in it. Hetionet's `Compound` nodes are (conveniently) keyed by
+DrugBank ID, so ID-mapping would be nearly free, and much of its
+drug-relational content is itself sourced from DrugBank/ChEMBL/BindingDB —
+i.e. substantially overlapping with what `extract_biomedical_features.py`
+already pulls into `data/processed/drug_{enzymes,targets,transporters}.jsonl`.
+For a genuinely novel/undocumented drug (the exact case the gap-filler
+exists to handle), that same novelty means it has no edges in Hetionet
+either — a knowledge graph cannot propagate information along edges that
+don't exist. This is the same structural limit that already made
+ChemBERTa and physchem descriptors fail: those tried to add *intrinsic*
+molecular signal and lost to the deployed ensemble anyway; a knowledge
+graph adds *relational* signal, which is strictly less available for the
+cold-start drugs this track is actually for. Architecturally, RGCN v2
+(which already builds a heterogeneous per-pair graph from DrugBank's own
+tables) is the more natural target for this idea, not the gap-filler — but
+RGCN v2 is the secondary/deprioritized track, and Hetionet integration
+would be a substantial engineering lift (new dataset, ID mapping
+verification, graph-schema extension), not attempted this session.
+
+---
+
+## Link-prediction benchmark: how good is the deterministic mechanistic-overlap signal, actually? (2026-08-18)
+
+Follow-up to the literature comparison above, retargeted at the axis
+actually asked about: not unseen *drugs*, but unseen/undocumented
+*combinations of known drugs* — the exact task DeepDDI (Ryu et al. 2018,
+*PNAS*), SumGNN's transductive split, and the medicX KG-embedding approach
+([arXiv:2308.04172](https://arxiv.org/abs/2308.04172)) all benchmark. This
+had never actually been measured for this project: `mechanism_lookup.py`'s
+deterministic `shared()` overlap check is used in production, but its
+real predictive value as a link predictor — does shared-protein overlap
+between two drugs' documented profiles actually correlate with whether
+DrugBank documents them as interacting — was never quantified.
+
+`scripts/evaluate_mechanistic_overlap_link_prediction.py`: sampled 50,000
+documented interaction pairs (positives) and 50,000 random non-documented
+pairs (negatives), both restricted to the 10,192 drugs with at least one
+DrugBank enzyme/target/transporter/carrier profile entry (the "known
+drugs" population — deliberately excludes the cold-start/unseen-drug case,
+which is the k-fold tracks' job). Scored each pair by counting shared
+proteins across all 4 kinds, computed only from each drug's own profile —
+blind to whether DrugBank's interaction text exists for that specific
+pair.
+
+| Metric | This project (deterministic overlap) | DeepDDI (PNAS 2018) | SumGNN (transductive) | medicX (KG embedding) |
+|---|---|---|---|---|
+| Primary metric | ROC-AUC 0.704 / PR-AUC 0.701 | accuracy 92.4% | F1 86.85 / accuracy 92.66 (DrugBank); ROC-AUC 94.86 / PR-AUC 93.35 (TWOSIDES) | F1 95.19% |
+| "Any overlap" operating point | accuracy 70.3%, **precision 96.6%**, recall 42.1%, F1 58.7% | — | — | — |
+
+Full results: `checkpoints/mechanistic_overlap_link_prediction_results.json`.
+
+**Per-kind breakdown** (which protein-overlap type actually carries
+signal): enzyme ROC-AUC 0.664 (clearly the strongest — consistent with
+CYP-mediated interactions being the most common real DDI mechanism
+class), transporter 0.557, target 0.527, carrier 0.523 (target and
+carrier barely above the 0.5 random baseline alone).
+
+**Honest read — not a failure, a different tool with a specific,
+well-characterized limitation**: precision 96.6% at the "any overlap"
+threshold means the signal is trustworthy essentially whenever it fires —
+consistent with `mechanism_lookup.py`'s own framing of mechanistic
+overlaps as "a plausible PK/PD mechanism," not a guess. But 42% recall
+means the majority of real documented DDIs do NOT reduce to shared
+enzyme/target/transporter/carrier overlap at all — additive
+pharmacodynamic effects, clinically-observed interactions without a clean
+shared-protein mechanism, or interactions this project's 4 profiled
+categories simply don't capture. This is not directly comparable to
+DeepDDI/SumGNN/medicX's 92-95%-level numbers, because those are supervised
+classifiers trained on thousands of labeled positive/negative examples to
+learn whatever patterns predict interaction (which plausibly includes,
+but isn't limited to, protein overlap); this signal uses zero training
+data and zero learned parameters — it's a fully interpretable rule, not a
+classifier, and was never designed to have full recall on its own. It's
+also the FIRST time this project has had an honest quantitative answer to
+"how much of real DDI is protein-overlap-explainable" (answer: a
+meaningful but clear minority, ~42% by this measure) rather than an
+assumption.
+
+**A genuinely new, well-motivated next step this opens up**: a lightweight
+*supervised* classifier trained on top of these same interpretable
+overlap-count features (plus possibly the ML-predicted mechanism features
+from the gap-filler, for drugs with incomplete documented profiles) could
+plausibly close some of the recall gap while staying far more
+interpretable than a full GNN — different from, and not redundant with,
+any of the four items already tried on the gap-filler track (this
+operates at the PAIR level with a completely different feature set: overlap
+counts, not fingerprints). Not attempted yet — proposed here as a next
+step, not assumed to work.
+
+---
+
+## Pair-level link classifier (2026-08-18): a real signal, substantially smaller than it first looked
+
+Follow-up to the link-prediction benchmark above, explicitly scoped as an
+ADDITIVE third signal for `scripts/mechanism_lookup.py` (alongside the
+documented lookup and the deterministic overlap check), never a
+replacement for either — the documented-interaction lookup stays ~100%
+reliable and untouched; this only ever matters for pairs with no
+documented text, where 42% recall (the naive overlap signal) leaves real
+room to improve.
+
+**Step 1 — cheap reweighting (`scripts/run_pair_link_classifier_kfold.py`,
+5-fold, same sampled population as the benchmark above): a wash.**
+Logistic regression on the same 4 per-kind overlap counts (letting it
+learn enzyme > transporter ≈ carrier > target weights, instead of the
+naive equal sum) barely moved anything: ROC-AUC 0.7046 ± 0.0018 vs.
+0.7042 ± 0.0018 naive, and precision/recall/F1 were **identical** to 4
+decimal places. Why: with all-positive counts and all-positive learned
+weights, the "any overlap > 0" decision boundary doesn't move — reweighting
+only reorders pairs that already have *some* nonzero overlap, a small
+fraction of the full sample, so it can't move the aggregate metric much.
+
+**Step 2 — richer features (`scripts/run_pair_link_classifier_richfeatures_kfold.py`):
+looked like a big win, wasn't fully real.** Added Tanimoto fingerprint
+similarity between the pair and each drug's total documented-profile size
+(4 new features on top of the original 4 counts). Jumped to
+**ROC-AUC 0.8735 ± 0.0027**, precision 0.875, recall 0.663, F1 0.754 — a
+large, consistent improvement. But the learned coefficients were a red
+flag: `tanimoto_sim`'s weight was ~0 (-0.025), while `min_profile_size`'s
+was large (1.615) — the model was leaning almost entirely on profile size,
+not chemistry. An ablation confirmed it: size features alone accounted for
+essentially the whole jump (0.7046 → 0.8713), fingerprint similarity alone
+added almost nothing (0.7046 → 0.7064).
+
+**Step 3 — size-matched negative sampling (`scripts/run_pair_link_classifier_sizematched_kfold.py`):
+the honest number.** Profile size is a well-known confound in link-prediction
+benchmarks generally ("degree bias") — a drug with a large documented
+profile mechanically has more *chances* to show shared-protein overlap
+with anything, and separately, well-studied drugs get more research
+attention and more documented interactions, regardless of true mechanism.
+Fixed with the standard remedy: sample negative pairs with each endpoint
+drawn proportional to its degree within the sampled positives, so
+negatives' size distribution matches positives' by construction (sanity
+check: mean `min_profile_size` 4.32 positives vs. 3.30 negatives, much
+closer than uniform-random sampling gives). Re-running the same 8-feature
+model on these harder negatives:
+
+| | ROC-AUC | precision | recall | F1 |
+|---|---|---|---|---|
+| uniform-random negatives (step 2) | 0.874 ± 0.003 | 0.875 | 0.663 | 0.754 |
+| **size-matched negatives (honest)** | **0.650 ± 0.003** | 0.702 | 0.419 | 0.525 |
+
+Learned coefficients flipped in an informative way once the size shortcut
+was removed: `tanimoto_sim` went from ~0 to **0.149** (fingerprint
+similarity carries real signal — it was just masked by the model
+preferring the free size shortcut when both were available), `enzyme`
+(0.545) and `target` (0.586) became nearly co-equal (previously enzyme
+dominated at 1.91 vs. target's 0.66, itself likely partly a size artifact
+since enzyme profiles correlate with overall profile size), `carrier`
+stayed near-zero (0.033), and the size features correctly dropped to
+~0 as the model learned they were no longer informative.
+
+**Honest conclusion**: real signal survives — ROC-AUC 0.650 vs. 0.500
+random is a consistent, non-trivial effect (std only ±0.003 across
+folds) — but it's meaningfully smaller than either the naive baseline
+(0.704) or the uncorrected rich-feature model (0.874) suggested. Worth
+noting: even the *original* link-prediction benchmark's 0.704 ROC-AUC
+almost certainly benefited from the same confound to some degree (larger
+profiles mechanically create more overlap opportunities even absent real
+interaction), so 0.65 may be closer to this project's true "clean"
+ceiling for protein-overlap/structure-based link prediction than either
+number reported before it. This is a well-documented general phenomenon
+in link-prediction literature, not unique to this project — it's also
+plausible (though unverified without re-running their exact evaluation)
+that some of DeepDDI/SumGNN/medicX's headline 92-95% numbers benefit from
+the same degree-bias effect, since they're evaluated the identical way
+(random held-out edges in a graph where node degree is a well-established
+strong predictor).
+
+**Not yet deployed.** Given the meaningful gap between the flattering and
+honest numbers, any integration into `scripts/mechanism_lookup.py` should
+use the size-matched-trained model (or drop the size features from the
+deployed feature set entirely, keeping only the 4 overlap counts +
+tanimoto_sim, which carry the genuine signal) and quote the honest 0.650
+ROC-AUC, not the inflated 0.874 — a decision deliberately left open
+pending explicit sign-off, same as this project's established pattern for
+every other validated-but-not-yet-shipped result.
+
+**How the honest 0.650 actually compares to the published literature** —
+clearly behind, by a real margin, not a rounding difference:
+
+| | ROC-AUC / equivalent |
+|---|---|
+| **This project (debiased, size-matched)** | **0.650** |
+| SumGNN (TWOSIDES, transductive) | ROC-AUC 0.949 |
+| SumGNN (DrugBank, transductive) | accuracy 92.7% / F1 86.9 |
+| medicX (KG embedding) | F1 95.2% |
+| DeepDDI | accuracy 92.4% |
+
+**Why the gap is expected, not alarming, and what closing it would
+actually require**: this project's model is 4 overlap counts + 1
+fingerprint-similarity number fed into a plain logistic regression — 5
+learned weights, no embeddings, no representation learning. SumGNN and
+medicX are deep models learning from a fundamentally richer signal: not
+just "what does drug A touch, what does drug B touch" (this project's
+entire feature set), but the *pattern* of which other drugs interact with
+things structurally/relationally similar to A and B — collaborative-
+filtering-style reasoning over a large auxiliary knowledge graph (SumGNN's
+Hetionet: 33,765 nodes, 1.69M edges) plus the DDI graph's own structure.
+Comparing a 5-parameter linear model against a graph neural network with a
+knowledge base behind it is comparing genuinely different amounts of
+modeling investment, not a fair architecture-controlled comparison.
+
+**One honest caveat that could narrow the gap, currently unverified**: it
+is unknown whether SumGNN/medicX corrected for the same degree-bias
+confound this section's own ablation just found and fixed (matched
+negative sampling is not universal practice in this literature). If they
+didn't, some of their 0.87–0.95-level numbers could be inflated the same
+way this project's own uncorrected 0.874 was — meaning the *true* gap
+might be smaller than the raw numbers suggest. This can't be confirmed
+without reproducing their exact evaluation protocol, which was explicitly
+scoped out of this comparison (conceptual/literature comparison only, not
+benchmark reproduction — see the earlier SumGNN comparison section above).
+
+**What would actually close this gap**: the same knowledge-graph lever
+already discussed and set aside for a different reason. The earlier
+Hetionet discussion (see "Comparison to published DDI models" above)
+argued AGAINST it for the mechanism gap-filler specifically, because a
+genuinely novel/cold-start drug has no graph edges to leverage regardless
+of how rich the graph is. That objection does **not** apply here — this
+pair-classifier task is explicitly about drugs DrugBank already documents
+individually, so a knowledge graph is architecturally the right tool for
+*this* gap, unlike the other one. Not attempted: a real build (new
+dataset, ID mapping to DrugBank IDs, GNN architecture), not a quick
+follow-up on top of what exists.

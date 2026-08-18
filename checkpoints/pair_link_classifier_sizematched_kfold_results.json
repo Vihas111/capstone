@@ -1,0 +1,83 @@
+{
+  "k": 5,
+  "n_positive": 50000,
+  "n_negative": 50000,
+  "feature_names": [
+    "enzyme",
+    "target",
+    "transporter",
+    "carrier",
+    "tanimoto_sim",
+    "profile_size_a",
+    "profile_size_b",
+    "min_profile_size"
+  ],
+  "sanity_check_mean_min_profile_size": {
+    "positives": 4.32366,
+    "negatives": 3.30424
+  },
+  "variants": {
+    "logreg_4feat": {
+      "roc_auc": {
+        "mean": 0.631386245,
+        "std": 0.003354544628809585
+      },
+      "pr_auc": {
+        "mean": 0.6271097137491769,
+        "std": 0.0037844681264101844
+      },
+      "accuracy": {
+        "mean": 0.61954,
+        "std": 0.003497213176230471
+      },
+      "precision": {
+        "mean": 0.7078829801840276,
+        "std": 0.007649545450634319
+      },
+      "recall": {
+        "mean": 0.40714,
+        "std": 0.0042086815037491185
+      },
+      "f1": {
+        "mean": 0.5169343288613972,
+        "std": 0.00416325465135928
+      }
+    },
+    "logreg_8feat": {
+      "roc_auc": {
+        "mean": 0.650255003,
+        "std": 0.0029166897619318545
+      },
+      "pr_auc": {
+        "mean": 0.6797627418188958,
+        "std": 0.004043316830668633
+      },
+      "accuracy": {
+        "mean": 0.6205,
+        "std": 0.0028284271247461957
+      },
+      "precision": {
+        "mean": 0.7018168398736648,
+        "std": 0.0056362966487531925
+      },
+      "recall": {
+        "mean": 0.41908,
+        "std": 0.0036955378498941104
+      },
+      "f1": {
+        "mean": 0.5247782308568703,
+        "std": 0.0035773604459008903
+      }
+    }
+  },
+  "mean_learned_coefficients_8feat": {
+    "enzyme": 0.5445862510762045,
+    "target": 0.5856113148932267,
+    "transporter": 0.22917759730147608,
+    "carrier": 0.032957191051545896,
+    "tanimoto_sim": 0.14851567637118837,
+    "profile_size_a": -0.01944368910940691,
+    "profile_size_b": -0.02934994748397309,
+    "min_profile_size": -0.027503569409841753
+  }
+}
