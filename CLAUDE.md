@@ -156,7 +156,9 @@ design called for.
   `requirements.txt`; GPU (RTX 4090) confirmed working — see §4/§5.
 - **Left untouched, per explicit decision**: `data/tensorized_test/` (4.1GB,
   ~1700+ shards) — not referenced by any script here, origin undocumented,
-  kept as-is rather than guessed at.
+  kept as-is rather than guessed at. **Origin identified 2026-08-18
+  (confirmed safe to delete), but not yet actually deleted — permission-
+  blocked, see §6 item 7.**
 - Archived `scripts/interaction_index.py` + `scripts/mechanism_engine.py` —
   earlier, never-imported-elsewhere prototypes of `scripts/mechanism_lookup.py`
   (§1b); their useful parts (name resolution, PK reasoning rules) were ported
@@ -194,8 +196,12 @@ the files the old doc listed:
   see §1b), `scripts/tensorize_pair_graphs_v3.py`, `scripts/train_v3.py`,
   `data/processed/drug_synonyms.jsonl`, `DIAGNOSIS.md`
 - A git repo / GitHub remote (the doc references `github.com/Vihas111/capstone.git`
-  and a `.gitignore`; neither exists anywhere under this folder, and there is
-  no `.git` directory at all, at any depth)
+  and a `.gitignore`; neither existed anywhere under this folder as of this
+  section's original writing. **Since resolved — see §6 item 8**: a local git
+  repo now exists, `.gitignore` was added, root commit `fde06ba` on
+  2026-08-18. No GitHub remote yet, so `github.com/Vihas111/capstone.git`
+  may still be worth checking if it's real and has content this folder
+  doesn't.)
 
 The old doc's own `.venv` instructions point at a different machine
 (`C:\Anaconda3`, an RTX 4060 laptop) than this one (this machine has no CUDA-
@@ -571,13 +577,39 @@ block later ones.
    project's actual primary deliverable, only worth investing in if there's
    a specific reason to prefer effect-level (TWOSIDES) prediction over the
    mechanism-level track above.
-7. **`data/tensorized_test/`** (4.1GB, ~1700+ shards) — still undocumented,
-   still unused by any script, left untouched per explicit prior decision.
-   Worth resolving (confirm origin and either wire it in or delete it) before
-   it causes confusion in a future session.
-8. **Version control.** No `.git` anywhere in this folder (confirmed at every
-   cleanup pass so far). Given the codebase has grown substantially since the
-   first pass, initializing a real git repo (with a `.gitignore` excluding
-   `data/`, `.venv/`, and large `checkpoints/*.pt`) would meaningfully reduce
-   the risk of losing work — currently the only history is this file's own
-   changelog-style notes.
+7. 🔶 **Origin resolved (2026-08-18), deletion blocked on permissions —
+   not actually deleted yet.** Traced `data/tensorized_test/`'s origin:
+   1,730 shards (100 graphs each) tensorizing the same 172,754 pair-graphs
+   as the canonical `data/tensorized_v2/` (173 shards × 1000 graphs), built
+   ~4 weeks earlier (2026-07-02 vs. 2026-07-30) by a different user account
+   (every file owned by uid/gid 1001, not this session's user) — a
+   smaller-shard-size test run of the same tensorization, fully superseded.
+   Its `ade_vocab.json` was confirmed byte-identical to the copy already
+   preserved at `archive/data/tensorized/ade_vocab.json`, so it has zero
+   content not already accounted for elsewhere — **safe to delete**. A
+   plain `rm -rf data/tensorized_test/` failed with `Permission denied` on
+   every file (the directory itself is `drwxrwxr-x` owned by uid 1001, so
+   this session's user has no write permission on it, regardless of the
+   files' own permissions) — needs `sudo rm -rf data/tensorized_test/` run
+   by someone with the right privileges. Still on disk, still 4.1GB, as of
+   this writing.
+
+   **Bonus finding while investigating**: 5 v1-era analysis scripts
+   (`predict_pair_from_dataset.py`, `compare_true_vs_pred.py`,
+   `analyze_label_distribution.py`, `error_analysis.py`,
+   `explain_prediction.py`) were left behind in live `scripts/` by the
+   original v1-pipeline archival pass (§2) — all hardcoded now-archived
+   paths (`checkpoints/best_rgcn.pt`, `data/tensorized/ade_vocab.json`) and
+   were silently broken. Moved into `archive/scripts/`, documented in
+   `archive/README.md`.
+8. ✅ **DONE (2026-08-18).** Version control. Local git repo initialized,
+   `.gitignore` added (excludes `data/`, `.venv/`, `checkpoints/*.pt`,
+   `archive/data/`, `archive/checkpoints/` — everything else, including all
+   source and the small results/history JSON files, is tracked). Root
+   commit `fde06ba`. **No GitHub remote configured yet** — the old
+   duplicated doc (§3) referenced `github.com/Vihas111/capstone.git`, and
+   this session's git username is `Vihas111`, a strong match worth checking:
+   that remote may be real and may contain some of the files §3 lists as
+   still not existing in this folder (`similarity_gapfiller.py`,
+   `rgcn_v3.py`, `drug_synonyms.jsonl`, etc.) — check before rebuilding any
+   of those from scratch.
