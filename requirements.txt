@@ -1,0 +1,62 @@
+# This project runs on two machines with different GPUs/drivers/Python
+# versions (an RTX 4090 desktop and an RTX 4060 laptop -- see CLAUDE.md).
+# torch can't be pinned once for both, so it's NOT listed here -- install
+# one of requirements-torch-cu121.txt (4090 machine) or
+# requirements-torch-cu128.txt (laptop) alongside this file. See those
+# files' own comments for which one and why.
+#
+# torch-geometric is listed here (not in the torch-variant files) because
+# its wheels are pure-Python / not CUDA-build-specific -- see the note
+# below on why the optional PyG accelerator packages are skipped too.
+#
+# IMPORTANT: .venv itself is NOT portable between these machines (proven
+# twice now -- it dangled as a broken pointer to the *other* machine's
+# interpreter both times this project's external drive was moved). Always
+# rebuild it fresh on whichever machine you're on:
+#   python3 -m venv .venv
+#   .venv/bin/pip install -r requirements.txt -r requirements-torch-<variant>.txt
+# Never assume a checked-in/moved .venv works as-is.
+
+# =========================================================
+# CORE SCIENTIFIC STACK
+# =========================================================
+
+numpy
+scipy
+scikit-learn
+
+# =========================================================
+# GRAPH / GNN
+# =========================================================
+
+networkx
+torch-geometric
+
+# =========================================================
+# NOTE: torch-scatter / torch-sparse / torch-cluster /
+# torch-spline-conv (optional PyG accelerators) are deliberately
+# NOT listed here. Nothing in this codebase imports them directly,
+# and they ship no prebuilt wheels for newer Python/torch combos --
+# installing them requires building from source against a
+# pre-installed torch, which breaks a plain `pip install -r
+# requirements.txt`. torch_geometric's HeteroConv/SAGEConv (what
+# this project actually uses) work fine without them.
+# =========================================================
+
+# =========================================================
+# DATA PROCESSING
+# =========================================================
+
+tqdm
+orjson
+
+# =========================================================
+# CHEMINFORMATICS
+# Pinned (not bare `rdkit`) -- Morgan/ECFP fingerprints are deterministic
+# for a fixed (rdkit version, molecule graph) pair, but the algorithm's
+# output can silently change across rdkit versions, which would silently
+# invalidate any already-trained mechanism_predictor.pt checkpoint.
+# Confirmed available for both machines' Python versions as of 2026-08-18.
+# =========================================================
+
+rdkit==2026.3.5

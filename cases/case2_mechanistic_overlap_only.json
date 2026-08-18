@@ -1,0 +1,152 @@
+{
+  "part_1_mechanism_report": {
+    "source": "DrugBank (deterministic lookup, no ML/LLM)",
+    "input_drugs": [
+      {
+        "drugbank_id": "DB00041",
+        "name": "Aldesleukin"
+      },
+      {
+        "drugbank_id": "DB00082",
+        "name": "Pegvisomant"
+      }
+    ],
+    "unresolved_inputs": [],
+    "per_drug_profile": {
+      "DB00041": {
+        "name": "Aldesleukin",
+        "enzymes": [
+          {
+            "name": "Prostaglandin G/H synthase 2",
+            "actions": [
+              "inducer"
+            ]
+          },
+          {
+            "name": "Cytosolic phospholipase A2",
+            "actions": [
+              "inducer"
+            ]
+          },
+          {
+            "name": "Cytochrome P450 3A4",
+            "actions": [
+              "inhibitor"
+            ]
+          },
+          {
+            "name": "Xanthine dehydrogenase/oxidase",
+            "actions": [
+              "inducer"
+            ]
+          },
+          {
+            "name": "Cytochrome P450 2E1",
+            "actions": [
+              "inhibitor"
+            ]
+          }
+        ],
+        "targets": [
+          {
+            "name": "Interleukin-2 receptor subunit beta",
+            "actions": [
+              "agonist",
+              "modulator"
+            ]
+          },
+          {
+            "name": "Interleukin-2 receptor subunit alpha",
+            "actions": [
+              "agonist",
+              "modulator"
+            ]
+          },
+          {
+            "name": "Cytokine receptor common subunit gamma",
+            "actions": [
+              "agonist"
+            ]
+          },
+          {
+            "name": "Interleukin-2",
+            "actions": [
+              "modulator"
+            ]
+          }
+        ],
+        "transporters": [],
+        "carriers": []
+      },
+      "DB00082": {
+        "name": "Pegvisomant",
+        "enzymes": [
+          {
+            "name": "Sterol 26-hydroxylase, mitochondrial",
+            "actions": [
+              "inducer"
+            ]
+          },
+          {
+            "name": "Glutamine synthetase",
+            "actions": [
+              "inhibitor"
+            ]
+          },
+          {
+            "name": "Cytochrome P450 3A4",
+            "actions": [
+              "inducer"
+            ]
+          },
+          {
+            "name": "Cholinesterase",
+            "actions": [
+              "inhibitor"
+            ]
+          },
+          {
+            "name": "Cytochrome P450 4A11",
+            "actions": [
+              "inhibitor"
+            ]
+          }
+        ],
+        "targets": [
+          {
+            "name": "Growth hormone receptor",
+            "actions": [
+              "antagonist"
+            ]
+          }
+        ],
+        "transporters": [],
+        "carriers": []
+      }
+    },
+    "documented_interactions": [],
+    "mechanistic_overlaps": [
+      {
+        "drug_a": "DB00041",
+        "drug_b": "DB00082",
+        "shared_enzymes": [
+          {
+            "name": "Cytochrome P450 3A4",
+            "actions_a": [
+              "inhibitor"
+            ],
+            "actions_b": [
+              "inducer"
+            ],
+            "likely_pk_effects": []
+          }
+        ],
+        "shared_targets": [],
+        "shared_transporters": [],
+        "shared_carriers": [],
+        "note": "Shared enzyme/transporter/target/carrier action, computed by intersecting each drug's individual DrugBank profile. This is NOT a documented DrugBank interaction -- it's a plausible PK/PD mechanism (e.g. both drugs inhibit the same CYP enzyme) that may or may not be clinically significant, and may or may not already be covered by a documented_interactions entry above."
+      }
+    ]
+  },
+  "part_2_downstream_prompt": "You are a clinical pharmacology assistant supporting a pharmacist in evaluating a polypharmacy regimen. You are given three things: (1) a deterministic, DrugBank-sourced mechanism report for a specific drug combination, (2) this patient's clinical data, and (3) excerpts retrieved from medical literature and drug monographs relevant to this case. Use all three together -- do not rely on the mechanism report alone, and do not rely on general knowledge where the retrieved literature or patient data should govern instead.\n\n## Drug combination\n- Aldesleukin (DB00041)\n- Pegvisomant (DB00082)\n\nAll inputs were recognized.\n\n## DrugBank-documented interactions\nNone documented by DrugBank for any pair in this combination.\n\n## Mechanistic overlaps (NOT documented DrugBank interactions -- inferred by this pipeline from shared enzyme/target/transporter/carrier action; may or may not be clinically significant, and may or may not already be covered by a documented interaction above)\n- Aldesleukin + Pegvisomant both act on enzyme 'Cytochrome P450 3A4' (Aldesleukin: inhibitor; Pegvisomant: inducer)\n\n## Per-drug pharmacology profile (DrugBank)\n- Aldesleukin (DB00041): enzymes: Prostaglandin G/H synthase 2 (inducer); Cytosolic phospholipase A2 (inducer); Cytochrome P450 3A4 (inhibitor); Xanthine dehydrogenase/oxidase (inducer); Cytochrome P450 2E1 (inhibitor) | targets: Interleukin-2 receptor subunit beta (agonist, modulator); Interleukin-2 receptor subunit alpha (agonist, modulator); Cytokine receptor common subunit gamma (agonist); Interleukin-2 (modulator)\n- Pegvisomant (DB00082): enzymes: Sterol 26-hydroxylase, mitochondrial (inducer); Glutamine synthetase (inhibitor); Cytochrome P450 3A4 (inducer); Cholinesterase (inhibitor); Cytochrome P450 4A11 (inhibitor) | targets: Growth hormone receptor (antagonist)\n\n## Patient data\n{{PATIENT_DATA}}\n\n## Retrieved medical literature (RAG)\n{{RETRIEVED_CONTEXT}}\n\n## Task\nUsing the mechanism report above together with this patient's data and the retrieved literature, explain to the pharmacist:\n1. What clinically relevant effect(s) this drug combination is likely to have in THIS patient specifically (not just in general).\n2. Whether each documented interaction and mechanistic overlap above is actually relevant given this patient's data (e.g. renal/hepatic function, other conditions, other medications).\n3. Recommended monitoring, dose adjustment, or alternative therapy considerations, citing the retrieved literature where possible.\n4. Your confidence, explicitly distinguishing what is DOCUMENTED (DrugBank interaction text), what is INFERRED (mechanistic overlap only), and what is GROUNDED in the retrieved literature or patient data.\n\nDo not state a claim as established fact unless it is supported by the mechanism report, the patient data, or the retrieved literature above. If evidence conflicts or is insufficient to answer confidently, say so explicitly rather than guessing."
+}

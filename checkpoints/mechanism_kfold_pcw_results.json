@@ -1,0 +1,132 @@
+{
+  "tag": "pcw_transporter200",
+  "k": 5,
+  "pos_weight_mode": "per-category",
+  "hidden_dims": [],
+  "macro_ap_mean": 0.25965490341186526,
+  "macro_ap_std": 0.013133985286049955,
+  "micro_ap_mean": 0.135122250020504,
+  "micro_ap_std": 0.019659974638299972,
+  "per_fold": [
+    {
+      "split": "test",
+      "n_samples": 777,
+      "loss": 0.05618570478899138,
+      "macro_ap": 0.2446783185005188,
+      "micro_ap": 0.1385355442762375,
+      "per_kind": {
+        "enzyme": {
+          "macro_ap": 0.1241341233253479,
+          "micro_ap": 0.15875691175460815,
+          "n_labels": 77
+        },
+        "target": {
+          "macro_ap": 0.29283103346824646,
+          "micro_ap": 0.17835001647472382,
+          "n_labels": 289
+        },
+        "transporter": {
+          "macro_ap": 0.17482225596904755,
+          "micro_ap": 0.11123427748680115,
+          "n_labels": 56
+        }
+      }
+    },
+    {
+      "split": "test",
+      "n_samples": 774,
+      "loss": 0.06123740811433111,
+      "macro_ap": 0.253842294216156,
+      "micro_ap": 0.10828869789838791,
+      "per_kind": {
+        "enzyme": {
+          "macro_ap": 0.09854617714881897,
+          "micro_ap": 0.14451457560062408,
+          "n_labels": 77
+        },
+        "target": {
+          "macro_ap": 0.3108232617378235,
+          "micro_ap": 0.15383000671863556,
+          "n_labels": 289
+        },
+        "transporter": {
+          "macro_ap": 0.17488829791545868,
+          "micro_ap": 0.10560057312250137,
+          "n_labels": 56
+        }
+      }
+    },
+    {
+      "split": "test",
+      "n_samples": 779,
+      "loss": 0.05885162843125207,
+      "macro_ap": 0.2755049467086792,
+      "micro_ap": 0.1274227797985077,
+      "per_kind": {
+        "enzyme": {
+          "macro_ap": 0.17177510261535645,
+          "micro_ap": 0.14580535888671875,
+          "n_labels": 77
+        },
+        "target": {
+          "macro_ap": 0.3288958966732025,
+          "micro_ap": 0.17234084010124207,
+          "n_labels": 289
+        },
+        "transporter": {
+          "macro_ap": 0.1437206119298935,
+          "micro_ap": 0.12930844724178314,
+          "n_labels": 56
+        }
+      }
+    },
+    {
+      "split": "test",
+      "n_samples": 775,
+      "loss": 0.056735147322927205,
+      "macro_ap": 0.2529456913471222,
+      "micro_ap": 0.13904450833797455,
+      "per_kind": {
+        "enzyme": {
+          "macro_ap": 0.12938588857650757,
+          "micro_ap": 0.1588486135005951,
+          "n_labels": 77
+        },
+        "target": {
+          "macro_ap": 0.3070690929889679,
+          "micro_ap": 0.1803116500377655,
+          "n_labels": 289
+        },
+        "transporter": {
+          "macro_ap": 0.15001718699932098,
+          "micro_ap": 0.11860490590333939,
+          "n_labels": 56
+        }
+      }
+    },
+    {
+      "split": "test",
+      "n_samples": 775,
+      "loss": 0.05599193487848554,
+      "macro_ap": 0.27130326628685,
+      "micro_ap": 0.16231971979141235,
+      "per_kind": {
+        "enzyme": {
+          "macro_ap": 0.1697808802127838,
+          "micro_ap": 0.20205318927764893,
+          "n_labels": 77
+        },
+        "target": {
+          "macro_ap": 0.3241575062274933,
+          "micro_ap": 0.2116200178861618,
+          "n_labels": 289
+        },
+        "transporter": {
+          "macro_ap": 0.14118638634681702,
+          "micro_ap": 0.10320888459682465,
+          "n_labels": 56
+        }
+      }
+    }
+  ]
+}

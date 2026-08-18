@@ -1,0 +1,10 @@
+# For the RTX 4060 Laptop (8GB VRAM, driver 610.57.04, CUDA 13.3 UMD).
+# Only Python 3.14 is installed system-wide on this machine (no 3.10-3.13,
+# no conda/pyenv) -- torch==2.5.1+cu121 (the 4090 machine's pin) has no
+# Python 3.14 wheel at all, so this machine uses a newer torch build
+# instead. Confirmed torch.cuda.is_available() == True against this driver.
+#
+# NOTE: 8GB VRAM is much less than the 4090's -- if training the RGCN v2
+# track here, train_v2.py's default --batch-size 128 may need lowering.
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.11.0+cu128

@@ -1,0 +1,29 @@
+# Environments -- machine-specific, never portable (see CLAUDE.md section 4b:
+# broke as a dangling symlink twice already when this drive moved machines).
+# Rebuild fresh with `python3 -m venv .venv` + requirements*.txt on each machine.
+.venv/
+
+# Data -- 27GB+, not meant for git. Every file here is regenerable via the
+# pipeline documented in CLAUDE.md section 1 (parse_drugbank.py through
+# tensorize_pair_graphs_v2.py) or section 3b/3c (extract_smiles.py through
+# build_mechanism_*.py), deterministic where seeded (seed=42).
+data/
+
+# Trained model weights -- binary blobs, regenerable via scripts/train*.py.
+# Training-history / k-fold-results *.json files in this same directory ARE
+# tracked (small, and the actual evidence behind CLAUDE.md/findings.md's
+# reported numbers) -- only the *.pt weight files are excluded here.
+checkpoints/*.pt
+
+# Archived superseded data/checkpoints -- large binary reference dumps.
+# Everything else under archive/ (scripts/, models/, data_utils/, README.md)
+# IS tracked -- that's the actual reference value, not the multi-GB blobs.
+archive/data/
+archive/checkpoints/
+
+# Claude Code session state
+.claude/
+
+# Python
+__pycache__/
+*.pyc

@@ -1,0 +1,9 @@
+# For the RTX 4090 desktop (driver 535.309, CUDA 12.2 max as of the last
+# time that machine was checked -- reverify with `nvidia-smi` if driver was
+# updated since). A plain `pip install torch` on that machine resolved to a
+# CUDA 13.x build that silently ran CPU-only (torch.cuda.is_available() ==
+# False, no error) -- this pin avoids that.
+#
+# Requires Python <=3.13 (no Python 3.14 wheel exists for torch 2.5.1).
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1+cu121
