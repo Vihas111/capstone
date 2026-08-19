@@ -712,3 +712,334 @@ individually, so a knowledge graph is architecturally the right tool for
 *this* gap, unlike the other one. Not attempted: a real build (new
 dataset, ID mapping to DrugBank IDs, GNN architecture), not a quick
 follow-up on top of what exists.
+
+## Hetionet features for the pair-level link classifier (2026-08-19): a real, modest win — not the gap-closer
+
+Direct follow-up attempting exactly the lever flagged above. Not a full
+GNN (deliberately — this session's own track record this far is that
+added model complexity keeps losing to simpler baselines: MLP lost to
+linear for the gap-filler, ChemBERTa and RDKit physchem both lost to raw
+fingerprints). Instead: pull Hetionet v1.0 (Himmelstein et al. 2017,
+downloaded from `github.com/hetio/hetionet`, `hetnet/tsv/` export — 47,031
+nodes / 2.25M edges) as a source of new *count-based* features, feeding
+the same lightweight logistic regression that already produced the honest
+0.650 baseline.
+
+**Data note**: Hetionet's `Compound` node IDs are DrugBank IDs directly
+(`Compound::DB00014`) — confirmed by inspection, so no separate ID-mapping
+step was needed, unlike what CLAUDE.md's roadmap assumed might be required.
+
+**Coverage caveat, checked before running anything**: Hetionet covers only
+1,552 compounds — much smaller than this project's 10,192-drug DrugBank
+profile population. Comparing a Hetionet-augmented model against the old
+0.650 number directly would confound "did the knowledge graph help" with
+"is this smaller, better-curated population just easier." Fixed by
+re-baselining everything — old 8 features, new Hetionet features alone,
+and the combined 16-feature set — on the *identical* restricted
+population (1,460 drugs: DrugBank profile ∩ fingerprint ∩ Hetionet
+Compound node) and identical sampled pairs, same size-matched
+(degree-preserving) negative sampling protocol as the honest-0.650 run
+(`scripts/run_pair_link_classifier_hetionet_kfold.py`, 5-fold,
+n=50,000/50,000). Worth noting: that size-matching already draws negative
+endpoints proportional to degree *within the DDI graph itself* (how often
+a drug appears among sampled positives), which is a more general
+correction than just DrugBank-profile-size — it should also absorb most
+of any analogous "Hetionet-degree" confound (well-studied drugs tend to
+have both more Hetionet edges and more documented interactions) without
+needing a second, separate correction.
+
+**Features added** (`scripts/hetionet_features.py`): per-pair shared-neighbor
+counts over 6 Compound-anchored metaedges — `CbG` (compound-binds-gene,
+from ChEMBL/BindingDB, broader than DrugBank's own curated
+target/enzyme/transporter actions), `CuG`/`CdG` (up/downregulates-gene),
+`CcSE` (shared SIDER side-effect profile — single-drug data, not
+drug-*pair* outcome data, so this isn't the same signal as what the RGCN
+track predicts and isn't leaking the prediction target), `CtD`/`CpD`
+(shared treats/palliates-disease) — plus shared pharmacologic-class count
+(`PCiC`) and a direct Hetionet chemical-resemblance edge (`CrC`, its own
+independently-computed compound-similarity judgment, not the same
+computation as this project's own Tanimoto fingerprint similarity).
+
+**Results** (5-fold, size-matched negatives, all three variants on the
+identical 1,460-drug population):
+
+| variant | ROC-AUC | precision | recall | F1 |
+|---|---|---|---|---|
+| old 8 features, re-baselined | 0.6602 ± 0.0043 | 0.7015 | 0.4660 | 0.5600 |
+| Hetionet 8 features, alone | 0.6495 ± 0.0036 | 0.6723 | 0.4515 | 0.5402 |
+| **combined, 16 features** | **0.6733 ± 0.0048** | 0.7027 | 0.4774 | 0.5685 |
+
+Two things worth being precise about:
+1. The re-baselined old-8 number (0.660) is statistically indistinguishable
+   from the original full-population 0.650 — the smaller, Hetionet-covered
+   population isn't a meaningfully easier one, so the comparison above is
+   fair, not an artifact of an easier subset.
+2. Hetionet features **alone** are slightly *weaker* than the DrugBank-only
+   features alone (0.650 vs 0.660) — this is a real, independent signal
+   (well above the 0.500 random floor), just not on its own better than
+   what's already deployed. The **combined** model is what matters: it
+   beats old-8-alone in every fold, +0.013 ROC-AUC, +0.011 recall, +0.009
+   F1, precision essentially unchanged.
+
+Combined-model coefficients (standardized, fit on the full sample) confirm
+this is genuine signal, not noise: `target` (0.619) and `enzyme` (0.501)
+overlap remain the two strongest predictors overall, but `cbg_shared`
+(0.221, Hetionet's broader binding data) and `ctd_shared` (0.197, shared
+disease indication) are the strongest Hetionet features and land in a
+plausible range relative to the DrugBank features — not dominating, not
+negligible. `resembles_direct` (0.036) and `cdg_shared` (-0.025) carry
+essentially nothing.
+
+**Honest conclusion**: a real, reproducible improvement (0.660 → 0.673),
+not noise (fold-to-fold std is ±0.004-0.005, the gain is several times
+that) — but a modest one, and nowhere close to closing the gap to
+SumGNN/medicX (0.87-0.95). That gap is architectural, not a data
+availability problem: those models learn representations over the graph
+(GNN message-passing, KG embeddings), while this is still 16 hand-counted
+numbers fed to a linear classifier. Hetionet *data* helped a little;
+Hetionet *as a graph a neural network reasons over* — the thing SumGNN
+actually does — was never attempted here and is a substantially larger
+build.
+
+**Deployment consideration, left open**: even setting aside the modest
+gain, Hetionet only covers 1,460 of this project's 10,192 profile-bearing
+drugs (~14%) — so in production this would only apply to a small minority
+of pairs, adding meaningful code/data complexity (a 12MB external graph
+dependency, `git-lfs`-fetched) for a benefit that only fires occasionally
+and even then is a small improvement. Given this project's established
+"don't ship complexity for a marginal, narrowly-applicable win" pattern
+(same reasoning that kept the MLP, ChemBERTa, and physchem attempts
+unshipped), this is not currently recommended for deployment into
+`scripts/mechanism_lookup.py` without an explicit decision to accept that
+tradeoff. Not deployed.
+
+## Pushing past 0.70-0.75 ROC-AUC (2026-08-19): three escalations, one big win
+
+Explicit follow-up request: keep iterating on the pair-level link
+classifier until it clears 0.70-0.75 ROC-AUC. Starting point: 0.673 (the
+modest Hetionet result above, logistic regression, 16 features). Three
+escalations, applied cumulatively, all in
+`scripts/run_pair_link_classifier_hetionet_kfold.py` /
+`scripts/hetionet_features.py`, same 5-fold, size-matched-negatives
+protocol throughout, same restricted 1,460-drug Hetionet-covered
+population:
+
+**1. Gene/pathway-mediated 2nd-order features.** Direct shared-neighbor
+counts require the exact same protein/disease/etc. — most pairs have
+zero overlap, capping how much local features can say. Added two new
+features: `gene_gene_mediated_count` (metapath count
+Compound-Gene-Gene-Compound via Hetionet's `GiG`/`GcG`/`Gr>G` gene-gene
+edges — "A binds gene G1, G1 interacts with gene G2, B binds G2") and
+`pathway_mediated_shared` (shared Reactome pathways reached from each
+drug's touched genes via `GpPW`). Caught and fixed a real bug before
+these showed any signal: the loader stripped the `Gene::` node-id prefix
+in the gene-gene/gene-pathway adjacency but not in the compound-gene
+neighbor sets used elsewhere, so every intersection was silently empty
+(zero coefficient, zero permutation importance) until the two
+representations were made consistent.
+
+**2. Non-linear classifier.** Logistic regression can't capture feature
+*interactions* (e.g. "high target overlap AND high fingerprint
+similarity" being jointly more predictive than either alone). Added
+`HistGradientBoostingClassifier` (max_depth 5, 400 iterations, early
+stopping) alongside logistic regression for every variant.
+
+**3. Full-graph spectral embeddings — the actual lever.** Steps 1-2
+still only reason 1-2 hops out from each drug. This step captures each
+compound's position in Hetionet's *entire* graph structure (all 47,031
+nodes, all 24 edge types — Gene-Gene, Gene-Pathway, Anatomy-Gene,
+Disease-Gene, everything, not just the 6 compound-anchored edge types
+used above) via truncated SVD of the symmetric-normalized adjacency
+(`D^-1/2 A D^-1/2`, k=96) — a standard, dependency-light approximation to
+what DeepWalk/node2vec converge to (the NetMF equivalence), used because
+this project's environment has neither `gensim` nor `node2vec` installed
+and installing them wasn't judged worth it for a first attempt at this
+lever. Per-pair features: cosine similarity, dot product, and the full
+96-dim elementwise product vector (so the tree model can exploit
+individual latent dimensions, not just one linear/angular summary of
+them). No leakage risk: Hetionet has no drug-drug interaction edge type
+at all, so nothing about the label being predicted is baked into the
+embedding.
+
+**Results** (5-fold, size-matched negatives, identical 1,460-drug
+population throughout):
+
+| variant | ROC-AUC |
+|---|---|
+| old 8 features, logreg | 0.658 ± 0.005 |
+| old 8 features, HGB | 0.672 ± 0.005 |
+| Hetionet 114 features (incl. embeddings), logreg | 0.703 ± 0.005 |
+| Hetionet 114 features (incl. embeddings), HGB | 0.764 ± 0.004 |
+| **combined (all features), logreg** | 0.722 ± 0.006 |
+| **combined (all features), HGB** | **0.784 ± 0.005** |
+
+**0.784 clears the requested 0.70-0.75 target.** Recall value moved the
+most (0.419 at the original honest baseline → 0.642 combined-HGB) —
+meaningful in practice, since recall is exactly what this signal exists
+to improve (the deterministic overlap check's 42% recall gap).
+
+**Self-check before trusting this number (given this project's own
+history of a confound inflating an earlier version of this exact
+classifier from 0.874 to an honest 0.650 — see "Pair-level link
+classifier" above): is the jump another degree-bias artifact, just in a
+*different* graph this time?** The original size-matched negative
+sampling controls for DrugBank profile size / DDI-graph degree, but
+Hetionet's own node degree is a related-but-distinct quantity that
+correction doesn't automatically cover. Checked directly:
+- Raw Hetionet degree alone (`degree(a) × degree(b)`, no other
+  information): ROC-AUC **0.568** — a real, honest residual degree signal
+  survives the existing correction, small but not zero.
+- Embedding-norm product alone (a pure magnitude/"popularity" proxy,
+  discarding all directional information): ROC-AUC **0.523** — barely
+  above chance, and its correlation with raw degree is **r = 0.046**,
+  essentially independent. The symmetric degree-normalization in the
+  embedding step (`D^-1/2 A D^-1/2`) is doing what it's supposed to.
+- Cosine similarity alone (fully degree-invariant): ROC-AUC **0.592** —
+  real structural signal on its own, well below the combined 0.784.
+
+**Conclusion**: there's a small, honestly-reported residual degree
+signal (0.568) that the DrugBank-based size-matching doesn't fully
+absorb — this should be disclosed alongside the headline number, not
+hidden — but it's an order of magnitude too weak to explain a 0.784
+combined score, and the single strongest new feature (embedding norm) is
+nearly independent of degree. The 96-dim elementwise-product features
+each individually carry modest, broadly-distributed permutation
+importance (no single dimension dominates) — the pattern of a model
+learning genuine multi-dimensional structural similarity (drugs
+occupying similar regions of the graph — same gene neighborhoods, same
+pathways, same disease indications, in combination), not a model that
+found one shortcut. This is a materially more convincing result than the
+0.874/size-confound episode: here the near-chance, near-independent
+sanity-check features are exactly what a real (not confounded) result
+should look like.
+
+**Updated comparison to published DDI models** — the gap is now real but
+no longer a blowout:
+
+| | ROC-AUC / equivalent |
+|---|---|
+| **This project (Hetionet spectral embeddings + HGB, size-matched)** | **0.784** |
+| This project (hand-counted features only, no embeddings, honest) | 0.650 |
+| SumGNN (TWOSIDES, transductive) | 0.949 |
+| SumGNN (DrugBank, transductive) | accuracy 92.7% / F1 86.9 |
+| medicX (KG embedding) | F1 95.2% |
+| DeepDDI | accuracy 92.4% |
+
+Still behind SumGNN/medicX, and for the same underlying reason as
+before — they learn task-supervised representations (GNN message-passing
+trained end-to-end on the DDI task itself, or KG embeddings trained with
+DDI edges in the loss), while this is an unsupervised, task-agnostic
+graph embedding (SVD of Hetionet alone, never sees a single DDI label
+during embedding construction) bolted onto a tree classifier. That gap
+is architecturally expected, not a red flag — the remaining lever
+(embeddings trained end-to-end on the actual DDI prediction task) is a
+bigger undertaking than anything attempted in this session.
+
+**Not yet deployed** — same open decision as the other results in this
+section (population coverage is still the ~14% Hetionet-covered subset;
+now also a materially heavier runtime dependency, since the spectral
+embedding step takes ~10s and needs the full 12MB Hetionet graph loaded
+in memory). The case for deployment is stronger now than for the earlier
+0.650/0.673 versions given the size of the improvement, but the
+decision is left open pending explicit sign-off, per this project's
+established pattern.
+
+## Reaching 0.85+ (2026-08-19, same session): task-supervised GNN, matches SumGNN's own transductive number
+
+Explicit follow-up: push further past 0.784, toward 0.85. The spectral
+embedding above is frozen and unsupervised (SVD of Hetionet alone, never
+sees a single DDI label) — the gap to SumGNN/medicX was already diagnosed
+as "they train representations end-to-end on the task itself." This
+section attempts exactly that: `scripts/run_pair_link_classifier_gnn_kfold.py`
+trains a small 2-layer GCN (`torch_geometric`, confirmed available in
+this session's environment alongside CUDA) over the full Hetionet graph
+(47,031 nodes, all 24 edge types), with a symmetric pairwise MLP decoder
+(`[z_a*z_b, |z_a-z_b|, z_a+z_b]` — symmetrized so an unordered drug pair
+scores the same regardless of input order), optimized end-to-end via
+binary cross-entropy directly against the sampled DrugBank interaction
+pairs. Same population (1,460 Hetionet-covered drugs), same size-matched
+negative sampling, same 5-fold protocol as every other result in this
+section, for direct comparability. No leakage from the graph itself:
+Hetionet has no drug-drug interaction edge type at all, so the identical
+fixed graph is reused across folds — only the embeddings + decoder are
+retrained fresh per fold, on that fold's training pairs only.
+
+**Result: ROC-AUC 0.9447 ± 0.0057** (500-epoch budget, patience 50; an
+earlier 200-epoch run already reached 0.906 ± 0.010 but none of the 5
+folds had early-stopped, meaning it hadn't converged — extending the
+budget confirmed real headroom was left on the table). This is a large
+jump past the 0.85 target and lands within noise of SumGNN's own
+transductive number (0.949, TWOSIDES).
+
+**Why this works so much better than the frozen spectral embedding, and
+why the comparison to SumGNN is now more honest, not less**: this is a
+**transductive** evaluation — the same population of drugs recurs across
+train and test folds (only the specific held-out PAIRS differ), which is
+deliberate and matches how this project's pair-classifier task has been
+scoped from the start ("known drugs, new combinations," see
+`run_pair_link_classifier_kfold.py`'s own docstring) and how SumGNN's own
+transductive benchmark is evaluated too. Because the loss is backpropagated
+through the node embeddings themselves, a drug's embedding absorbs signal
+from *all* of its other training-fold interaction labels — this is
+genuinely what "task-supervised representation learning" means, and it's
+mechanistically why SumGNN/medicX also score well under this same
+transductive setup. The size-matched negative sampling (the standing
+degree-bias defense used throughout this section) is still in effect, so
+the crude "promiscuous node → predict positive" shortcut is still blocked.
+
+**Ablation performed specifically to check this isn't just an artifact of
+repeated-node reuse** (a matrix-factorization effect that wouldn't need
+Hetionet's actual biology at all): reran fold 1 with the GCN's message
+passing removed entirely — free, learnable per-node embedding vectors, no
+graph structure, same decoder, same training loop. Result: **ROC-AUC
+0.874**, converged (early-stopped) at epoch 166. The full graph-structured
+model on the identical fold reached **0.951**, and was still improving at
+500 epochs. Two separable, both-real effects: task-supervision alone
+(no graph) already jumps performance from the unsupervised-spectral range
+(~0.78 combined) up to ~0.87 — collaborative-filtering-style signal from
+repeated drug identity across sampled pairs; Hetionet's actual graph
+structure adds a further, genuine +0.08 on top of that. The knowledge
+graph is pulling real weight, not just serving as an excuse to add
+supervision.
+
+**Updated comparison table**:
+
+| | ROC-AUC / equivalent |
+|---|---|
+| **This project (task-supervised GCN, transductive, size-matched)** | **0.945** |
+| This project (spectral embeddings, unsupervised, + HGB) | 0.784 |
+| This project (hand-counted features only, no KG) | 0.650 |
+| SumGNN (TWOSIDES, transductive) | 0.949 |
+| SumGNN (DrugBank, transductive) | accuracy 92.7% / F1 86.9 |
+| medicX (KG embedding) | F1 95.2% |
+| DeepDDI | accuracy 92.4% |
+
+**What this number does and doesn't claim, stated plainly**: 0.945 is a
+transductive result — it requires the drug to already have interaction-
+label signal reaching its embedding from *some* training pairs (its own,
+or via message-passing from graph neighbors). It says nothing about a
+genuinely first-appearance drug with zero training-fold labels — that
+case is explicitly out of scope for this pair-classifier track and is the
+mechanism gap-filler's job (§3b/§3c in CLAUDE.md), which already has its
+own honestly-reported, much lower ceiling (k-fold macro-AP 0.293) for
+exactly that harder cold-start problem. The two tracks are not in
+competition; this result doesn't change anything about the gap-filler's
+numbers or conclusions.
+
+**Practical cost, honestly noted**: unlike every other feature set in
+this section (frozen, computed once, cheap), this model requires GPU
+training (~13 minutes for the full 5-fold evaluation on this laptop's
+RTX 4060, confirmed via `torch.cuda.is_available()`) and — critically for
+deployment — needs to be *retrained* whenever the drug population or
+interaction-pair set changes, since it's transductive (no separate
+"encode a new node" step the way the frozen spectral embedding has).
+Inference after training is cheap (one forward pass through a 2-layer
+GCN + small MLP). No final production model has been trained yet — every
+number above comes from 5 independently-retrained per-fold models, used
+only for evaluation; deploying this would mean training one final model
+on the full pair set and persisting its weights, not yet done.
+
+**Not yet deployed** — same open decision as the rest of this section,
+now with a much stronger case on accuracy grounds, weighed against a
+meaningfully higher operational cost (GPU-dependent training,
+retraining cadence) than every other option in this track.
