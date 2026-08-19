@@ -1,0 +1,133 @@
+{
+  "k": 5,
+  "n_positive": 50000,
+  "n_negative": 50000,
+  "population_size": 1460,
+  "old_feature_names": [
+    "enzyme",
+    "target",
+    "transporter",
+    "carrier",
+    "tanimoto_sim",
+    "profile_size_a",
+    "profile_size_b",
+    "min_profile_size"
+  ],
+  "hetio_feature_names": [
+    "cbg_shared",
+    "cug_shared",
+    "cdg_shared",
+    "ccse_shared",
+    "ctd_shared",
+    "cpd_shared",
+    "pharm_class_shared",
+    "resembles_direct"
+  ],
+  "sanity_check_mean_min_profile_size": {
+    "positives": 5.60954,
+    "negatives": 4.47108
+  },
+  "variants": {
+    "old8_rebaselined": {
+      "roc_auc": {
+        "mean": 0.660236211,
+        "std": 0.0043176782797621615
+      },
+      "pr_auc": {
+        "mean": 0.6977542024904956,
+        "std": 0.004124643972306579
+      },
+      "accuracy": {
+        "mean": 0.63387,
+        "std": 0.0027414868228755234
+      },
+      "precision": {
+        "mean": 0.7015143129597187,
+        "std": 0.0033290925266626693
+      },
+      "recall": {
+        "mean": 0.46602,
+        "std": 0.0050514354395557685
+      },
+      "f1": {
+        "mean": 0.5600094114498698,
+        "std": 0.00440361104483982
+      }
+    },
+    "hetionet_only": {
+      "roc_auc": {
+        "mean": 0.6495477239999999,
+        "std": 0.0036208429805008086
+      },
+      "pr_auc": {
+        "mean": 0.6718812522585539,
+        "std": 0.0028724002973230128
+      },
+      "accuracy": {
+        "mean": 0.61572,
+        "std": 0.002235956171305655
+      },
+      "precision": {
+        "mean": 0.6723383246490995,
+        "std": 0.00387900279080277
+      },
+      "recall": {
+        "mean": 0.45148,
+        "std": 0.0028717590428168002
+      },
+      "f1": {
+        "mean": 0.5402013561803481,
+        "std": 0.002663687394472876
+      }
+    },
+    "combined_16feat": {
+      "roc_auc": {
+        "mean": 0.673272036,
+        "std": 0.004791620207807299
+      },
+      "pr_auc": {
+        "mean": 0.7072577521219017,
+        "std": 0.003813117496345733
+      },
+      "accuracy": {
+        "mean": 0.6377,
+        "std": 0.003606764478032914
+      },
+      "precision": {
+        "mean": 0.7026793547152467,
+        "std": 0.005218884063609608
+      },
+      "recall": {
+        "mean": 0.4774,
+        "std": 0.004370354676682422
+      },
+      "f1": {
+        "mean": 0.5685332053485045,
+        "std": 0.00457661437646447
+      }
+    }
+  },
+  "combined_model_coefficients": {
+    "enzyme": 0.5006834464536739,
+    "target": 0.6192371784875301,
+    "transporter": 0.17761980393212143,
+    "carrier": 0.02040460775734637,
+    "tanimoto_sim": 0.10051985578170426,
+    "profile_size_a": 0.03065176205458766,
+    "profile_size_b": 0.021942232668811883,
+    "min_profile_size": -0.05414145269195746,
+    "cbg_shared": 0.22083271372763658,
+    "cug_shared": 0.02565835909748276,
+    "cdg_shared": -0.024802784921698177,
+    "ccse_shared": 0.11213276787658953,
+    "ctd_shared": 0.19675442898641807,
+    "cpd_shared": 0.003917029702464476,
+    "pharm_class_shared": 0.11195373423886873,
+    "resembles_direct": 0.03582758675807834
+  },
+  "loose_reference_old_baseline_full_population": {
+    "roc_auc_mean": 0.65,
+    "roc_auc_std": 0.003,
+    "note": "measured on the full 10192-drug population, NOT the same restricted population -- not a fair direct comparison, see old8_rebaselined for that"
+  }
+}

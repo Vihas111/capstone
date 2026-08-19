@@ -148,6 +148,92 @@ write-up: findings/findings.md's "Pair-level link classifier" section.
 worth adding to `mechanism_lookup.py` as a new labeled field, and if so,
 using the debiased (size-features-dropped) model, not the inflated one.
 
+**Second follow-up (2026-08-19): tried Hetionet knowledge-graph features
+as the lever to close the gap to SumGNN/medicX (0.87-0.95) — real, modest
+win, not the gap-closer.** `scripts/hetionet_features.py` +
+`scripts/run_pair_link_classifier_hetionet_kfold.py` pull Hetionet v1.0
+(`data/hetionet/`, git-lfs-fetched from `github.com/hetio/hetionet`;
+`Compound` node IDs are DrugBank IDs directly, no ID-mapping needed) as
+count-based features (shared genes/diseases/pharmacologic-class/chemical-
+resemblance), added to the *same* logistic regression, re-baselined
+end-to-end on the identical Hetionet-covered population (1,460 of 10,192
+drugs) so the comparison isn't confounded by population size: old-8-alone
+0.660±0.004 (statistically the same as the original 0.650), Hetionet-8-alone
+0.650±0.004 (real but not better alone), **combined 0.673±0.005** — a
+genuine, reproducible +0.013 ROC-AUC gain, not noise. Still nowhere near
+SumGNN/medicX — that gap is architectural (deep GNN/KG-embedding
+representation learning vs. 16 hand-counted numbers in a linear model),
+not a data-availability problem; Hetionet *data* helped a little, using
+Hetionet *as a graph a neural net reasons over* was never attempted. Also
+only covers ~14% of this project's drug population. Full write-up:
+findings/findings.md's "Hetionet features for the pair-level link
+classifier" section. **Not deployed** — same open decision as above, now
+also weighing whether the modest, narrowly-applicable gain justifies the
+added 12MB external-data dependency.
+
+**Third follow-up (2026-08-19, same session): pushed past the 0.70-0.75
+target with full-graph spectral embeddings — this closed most of the way
+to the "using Hetionet as a graph a neural net reasons over" gap flagged
+above.** Three escalations on top of the 0.673 result: (1) gene/pathway
+2-hop metapath features (`Compound-Gene-Gene-Compound`,
+`Compound-Gene-Pathway-Gene-Compound`, fixing a real node-id-prefix bug
+along the way that was silently zeroing them), (2) a
+`HistGradientBoostingClassifier` variant alongside logistic regression
+(captures feature interactions logreg can't), and (3) truncated-SVD
+spectral embeddings over the *entire* Hetionet graph (all 47,031 nodes,
+all 24 edge types, k=96 — a dependency-light, no-`gensim`/`node2vec`-needed
+approximation to node2vec/DeepWalk) as 98 additional per-pair features
+(cosine similarity, dot product, elementwise product vector). Result:
+**combined HGB ROC-AUC 0.784 ± 0.005** — clears the requested target.
+Checked directly for a repeat of the earlier degree-bias confound (this
+project's own established discipline, given the 0.874→0.650 correction
+earlier in this same track): raw Hetionet degree alone scores only 0.568
+(a real but small residual signal, honestly disclosed), and critically
+the embedding-norm ("popularity") proxy is nearly *uncorrelated* with raw
+degree (r=0.046) and scores only 0.523 alone — the improvement is
+genuine multi-dimensional structural signal, not a hidden popularity
+shortcut. Still behind SumGNN/medicX (0.87-0.95) — architecturally
+expected, since this is an unsupervised embedding (never sees a DDI
+label) bolted onto a tree classifier, not a representation trained
+end-to-end on the DDI task itself. Full write-up: findings/findings.md's
+"Pushing past 0.70-0.75 ROC-AUC" section. **Not yet deployed** — same
+open decision, now with a stronger case given the size of the gain, but
+also a heavier runtime cost (spectral embedding step, ~10s + full graph
+in memory).
+
+**Fourth follow-up (2026-08-19, same session): pushed past 0.85 with a
+task-supervised GNN — now matches SumGNN's own transductive number.**
+`scripts/run_pair_link_classifier_gnn_kfold.py` trains a small 2-layer
+GCN (`torch_geometric`, GPU-accelerated on this laptop's RTX 4060) over
+the full Hetionet graph end-to-end against the sampled DDI pairs
+themselves (BCE loss backpropagated into the node embeddings) — the
+missing "task-supervised representation" piece the spectral-embedding
+result above was still missing. Same population/size-matched-negatives
+protocol throughout. **Result: ROC-AUC 0.9447 ± 0.0057** (5-fold,
+500-epoch budget — an earlier 200-epoch run hit 0.906 but hadn't
+converged) — within noise of SumGNN's own transductive TWOSIDES number
+(0.949). Ablation performed specifically to rule out this being just a
+repeated-node/matrix-factorization artifact: removing the GCN's graph
+message passing entirely (free per-node embeddings, same decoder, same
+training) scored 0.874 on the same fold the full model scored 0.951 on —
+confirms Hetionet's actual graph structure is contributing a real,
+separate +0.08, not just riding on task-supervision alone. Important
+scope note: this is a **transductive** result — it requires the drug to
+already have training-fold interaction-label signal reaching its
+embedding; it says nothing about a genuinely first-appearance drug with
+zero labels, which stays the mechanism gap-filler's job (§3b/§3c), not
+this track's. Practical cost, honestly noted: unlike every other result
+in this track, this one needs GPU training (~13 min per full 5-fold
+evaluation) and must be *retrained* whenever the drug/pair population
+changes (no separate "encode a new node" step) — a real operational
+difference from the frozen spectral embedding or hand-crafted features.
+Full write-up: findings/findings.md's "Reaching 0.85+" section. **Not
+yet deployed** — no final production model has been trained and
+persisted yet (every number above comes from 5 independently-retrained
+per-fold evaluation models); deployment decision left open, now with a
+much stronger accuracy case but a real operational-cost tradeoff to
+weigh against it.
+
 ## 2. What was cleaned up (2026-08-10, extended 2026-08-17)
 
 - Deleted whole-project duplicate folders `capstone_v2_enhancements/`,
