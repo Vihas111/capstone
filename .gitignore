@@ -27,3 +27,10 @@ archive/checkpoints/
 # Python
 __pycache__/
 *.pyc
+
+# web/ (Next.js frontend) + webapi/ (FastAPI backend) -- regenerable build/dep dirs
+web/node_modules/
+web/.next/
+web/.env.local
+webapi/.venv/
+webapi/__pycache__/

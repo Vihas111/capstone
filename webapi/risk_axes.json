@@ -1,0 +1,159 @@
+{
+  "_README": [
+    "CURATED CONFIG -- intended for domain-expert review, deliberately kept out of code.",
+    "",
+    "Each axis groups DrugBank category strings that all denote the SAME additive adverse",
+    "direction of effect. Channel B fires when 2+ drugs in a combination share an axis,",
+    "regardless of whether they share any protein -- this is what catches organ-level",
+    "convergence (e.g. the ACE-inhibitor + diuretic + NSAID 'triple whammy' renal risk),",
+    "which the shared-protein channel is structurally blind to.",
+    "",
+    "SELECTION CRITERIA (what makes something an axis vs. not):",
+    "  1. Denotes an ADVERSE direction of effect, not a therapeutic class.",
+    "     'Nephrotoxic agents' YES. 'Cardiovascular Agents' (522 drugs) NO -- that is a",
+    "     therapeutic class; two cardiovascular drugs sharing it implies nothing additive.",
+    "  2. Plausibly ADDITIVE -- more drugs on the axis means more risk.",
+    "  3. Sane population size. Very large categories carry little information.",
+    "",
+    "DELIBERATELY EXCLUDED: CYP inhibitor/inducer categories (those are mechanism, handled",
+    "by Channel A -- including them here would double-count the same finding), receptor-level",
+    "pharmacology classes ('Serotonin 5-HT2 Receptor Antagonists' -- mechanism, not outcome),",
+    "and vague catch-alls ('Toxic Actions').",
+    "",
+    "'tiers' optionally maps a category to a severity-of-contribution label that DrugBank",
+    "itself provides. This is DrugBank's own grading of the drug's contribution to that axis;",
+    "it is NOT a clinical severity grade for the interaction.",
+    "",
+    "To add an axis: confirm it meets all 3 criteria above, use the EXACT DrugBank category",
+    "string (see data/processed/drug_categories.jsonl), and write a plain-English consequence."
+  ],
+
+  "axes": [
+    {
+      "id": "qt_prolongation",
+      "label": "QT prolongation",
+      "consequence": "additive QT-interval prolongation, raising the risk of torsades de pointes",
+      "categories": [
+        "QTc Prolonging Agents",
+        "Highest Risk QTc-Prolonging Agents",
+        "Moderate Risk QTc-Prolonging Agents",
+        "Potential QTc-Prolonging Agents"
+      ],
+      "tiers": {
+        "Highest Risk QTc-Prolonging Agents": "highest risk",
+        "Moderate Risk QTc-Prolonging Agents": "moderate risk",
+        "Potential QTc-Prolonging Agents": "potential"
+      }
+    },
+    {
+      "id": "serotonin_syndrome",
+      "label": "serotonergic burden",
+      "consequence": "additive serotonergic activity, raising the risk of serotonin syndrome",
+      "categories": [
+        "Serotonergic Drugs Shown to Increase Risk of Serotonin Syndrome"
+      ]
+    },
+    {
+      "id": "nephrotoxicity",
+      "label": "kidney injury",
+      "consequence": "additive strain on renal function, raising the risk of acute kidney injury",
+      "categories": ["Nephrotoxic agents"]
+    },
+    {
+      "id": "hyperkalemia",
+      "label": "raised potassium",
+      "consequence": "additive elevation of serum potassium, raising the risk of hyperkalemia",
+      "categories": ["Agents causing hyperkalemia"]
+    },
+    {
+      "id": "bleeding",
+      "label": "bleeding risk",
+      "consequence": "additive impairment of clotting, raising the risk of bleeding",
+      "categories": ["Anticoagulants", "Antiplatelet agents"]
+    },
+    {
+      "id": "muscle_toxicity",
+      "label": "muscle toxicity",
+      "consequence": "additive muscle toxicity, raising the risk of myopathy or rhabdomyolysis",
+      "categories": ["Agents Causing Muscle Toxicity"]
+    },
+    {
+      "id": "cns_depression",
+      "label": "sedation / CNS depression",
+      "consequence": "additive sedation and central-nervous-system depression",
+      "categories": [
+        "Hypnotics and Sedatives",
+        "Benzodiazepine hypnotics and sedatives"
+      ]
+    },
+    {
+      "id": "anticholinergic_burden",
+      "label": "anticholinergic burden",
+      "consequence": "additive anticholinergic load (confusion, urinary retention, constipation, falls)",
+      "categories": [
+        "Anticholinergic Agents",
+        "Synthetic Anticholinergics, Quaternary Ammonium Compounds"
+      ]
+    },
+    {
+      "id": "hepatotoxicity",
+      "label": "liver injury",
+      "consequence": "additive hepatic strain, raising the risk of liver injury",
+      "categories": ["Hepatotoxic Agents"]
+    },
+    {
+      "id": "myelosuppression",
+      "label": "bone-marrow suppression",
+      "consequence": "additive bone-marrow suppression, raising the risk of cytopenias",
+      "categories": ["Myelosuppressive Agents"]
+    },
+    {
+      "id": "neurotoxicity",
+      "label": "nerve toxicity",
+      "consequence": "additive neurotoxicity",
+      "categories": ["Neurotoxic agents"]
+    },
+    {
+      "id": "seizure_threshold",
+      "label": "lowered seizure threshold",
+      "consequence": "additive lowering of the seizure threshold",
+      "categories": ["Agents that reduce seizure threshold"]
+    },
+    {
+      "id": "bradycardia",
+      "label": "slowed heart rate",
+      "consequence": "additive slowing of heart rate, raising the risk of symptomatic bradycardia",
+      "categories": ["Bradycardia-Causing Agents"]
+    },
+    {
+      "id": "hypotension",
+      "label": "low blood pressure",
+      "consequence": "additive blood-pressure lowering, raising the risk of symptomatic hypotension",
+      "categories": ["Hypotensive Agents"]
+    },
+    {
+      "id": "angioedema",
+      "label": "angioedema",
+      "consequence": "additive risk of angioedema",
+      "categories": ["Agents causing angioedema"]
+    },
+    {
+      "id": "neuromuscular_blockade",
+      "label": "neuromuscular blockade",
+      "consequence": "additive neuromuscular blockade, raising the risk of respiratory weakness",
+      "categories": [
+        "Neuromuscular Blocking Agents",
+        "Agents that produce neuromuscular block (indirect)"
+      ]
+    },
+    {
+      "id": "photosensitivity",
+      "label": "photosensitivity",
+      "consequence": "additive photosensitivity",
+      "categories": [
+        "Photosensitizing Agents",
+        "Drugs causing inadvertant photosensitivity"
+      ]
+    }
+  ]
+}

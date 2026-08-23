@@ -1,0 +1,47 @@
+{
+  "_README": [
+    "CURATED CONFIG -- intended for domain-expert review, deliberately kept out of code.",
+    "",
+    "Channel D (outcome annotation) uses this to answer 'so what?' after Channel A finds a",
+    "pharmacokinetic effect. Channel A can say 'Simvastatin's clearance is inhibited, so its",
+    "exposure rises' -- true but incomplete, because it never says why rising simvastatin",
+    "exposure matters. This maps a DrugBank category on the AFFECTED drug to the plain-English",
+    "consequence of having more of that drug in the body.",
+    "",
+    "Combined, the two produce the full statement: 'exposure to Simvastatin rises -- a drug",
+    "flagged as causing muscle toxicity (myopathy / rhabdomyolysis)'.",
+    "",
+    "DIFFERENT FROM risk_axes.json, which some categories also appear in: an AXIS fires when",
+    "2+ drugs SHARE it (additive effect between drugs). An OUTCOME CLASS fires for a SINGLE",
+    "drug whose exposure is being raised by something else (consequence of accumulation).",
+    "Same category can legitimately serve both roles.",
+    "",
+    "Phrasing must describe the consequence of MORE of the drug, and stay factual -- this text",
+    "is shown to the user as a direct statement, so it must not overclaim severity."
+  ],
+
+  "outcome_classes": {
+    "Agents Causing Muscle Toxicity": "causing muscle toxicity (myopathy / rhabdomyolysis)",
+    "Nephrotoxic agents": "toxic to the kidneys",
+    "Hepatotoxic Agents": "toxic to the liver",
+    "Neurotoxic agents": "toxic to nerve tissue",
+    "Myelosuppressive Agents": "suppressing bone marrow",
+    "Cardiotoxic antineoplastic agents": "toxic to the heart",
+    "QTc Prolonging Agents": "prolonging the QT interval",
+    "Highest Risk QTc-Prolonging Agents": "prolonging the QT interval (highest-risk group)",
+    "Moderate Risk QTc-Prolonging Agents": "prolonging the QT interval (moderate-risk group)",
+    "Anticoagulants": "impairing clotting",
+    "Antiplatelet agents": "impairing platelet function",
+    "Agents causing hyperkalemia": "raising serum potassium",
+    "Agents that reduce seizure threshold": "lowering the seizure threshold",
+    "Bradycardia-Causing Agents": "slowing heart rate",
+    "Hypotensive Agents": "lowering blood pressure",
+    "Agents that produce hypertension": "raising blood pressure",
+    "Anticholinergic Agents": "producing anticholinergic effects",
+    "Hypnotics and Sedatives": "causing sedation",
+    "Serotonergic Drugs Shown to Increase Risk of Serotonin Syndrome": "increasing serotonergic activity",
+    "Agents causing angioedema": "causing angioedema",
+    "Photosensitizing Agents": "causing photosensitivity",
+    "Neuromuscular Blocking Agents": "blocking neuromuscular transmission"
+  }
+}

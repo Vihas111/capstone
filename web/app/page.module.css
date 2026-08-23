@@ -1,0 +1,137 @@
+.workspace {
+  min-height: 100vh;
+}
+
+.landing {
+  width: min(var(--content-max), calc(100vw - 64px));
+  margin: 0 auto;
+  min-height: 100vh;
+  display: grid;
+  align-content: center;
+  gap: 24px;
+  padding: clamp(24px, 5vh, 40px) 0;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(36px, 7vw, 64px);
+  letter-spacing: -0.06em;
+  font-weight: 500;
+}
+
+.toggleRow {
+  display: flex;
+  gap: 8px;
+}
+
+.toggleButton {
+  border: 1px solid var(--border-subtle);
+  background: none;
+  color: var(--muted);
+  padding: 8px 16px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.toggleButtonActive {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--option-active);
+}
+
+.inputs {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 14px;
+}
+
+.inputsThree {
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+}
+
+.cross {
+  color: var(--muted);
+  padding-bottom: 14px;
+  font-size: 22px;
+}
+
+.actions {
+  margin-top: 4px;
+}
+
+.status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.bootstrapError {
+  display: grid;
+  gap: 12px;
+}
+
+.retryAction {
+  border: none;
+  background: none;
+  color: var(--text);
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  padding: 0;
+}
+
+.retryAction:focus-visible,
+.errorAction:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.errorView {
+  width: min(var(--content-max), calc(100vw - 64px));
+  margin: 0 auto;
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  padding: 40px 0;
+}
+
+.errorTitle {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 56px);
+  letter-spacing: -0.04em;
+}
+
+.errorMessage {
+  margin: 0;
+  color: var(--muted);
+  max-width: 72ch;
+}
+
+.errorAction {
+  border: none;
+  background: none;
+  color: var(--text);
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .landing,
+  .errorView {
+    width: calc(100vw - 36px);
+  }
+
+  .inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .cross {
+    display: none;
+  }
+}

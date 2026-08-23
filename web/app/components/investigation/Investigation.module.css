@@ -1,0 +1,74 @@
+.investigation {
+  width: min(var(--content-max), calc(100vw - 64px));
+  margin: 0 auto;
+  padding: 40px 0;
+}
+
+.heading {
+  margin: 0 0 24px;
+  font-size: clamp(28px, 5vw, 48px);
+  letter-spacing: -0.04em;
+}
+
+.timeline {
+  display: grid;
+  gap: 12px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--dot-border);
+}
+
+.dotActive {
+  background: var(--accent);
+  border-color: transparent;
+  box-shadow: 0 0 18px var(--accent-glow);
+}
+
+.dotCompleted {
+  background: var(--text);
+  border-color: transparent;
+}
+
+.label {
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.labelActive,
+.labelCompleted {
+  color: var(--text);
+}
+
+.line {
+  width: 14px;
+  height: 26px;
+  margin-left: -2px;
+  color: var(--line-muted);
+}
+
+.cancel {
+  margin-top: 24px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cancel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
