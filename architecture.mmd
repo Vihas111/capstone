@@ -1,0 +1,19 @@
+flowchart LR
+    A["DrugBank
+DDI Data"] --> B["Drug / Pair Preparation"]
+    H["Hetionet
+47,031 nodes
+~4.5M directed edges"] --> B
+    B --> C1["Spectral Features
+96-D SVD embeddings"]
+    B --> C2["Task-Supervised
+Node Embeddings"]
+    C1 --> D1["122 Pair Features"]
+    C2 --> D2["2-layer GCN"]
+    D2 --> D3["Symmetric Pair Decoder
+3-layer MLP"]
+    D1 --> E1["HistGradientBoosting"]
+    E1 --> F["DDI Probability"]
+    D3 --> F
+    F --> G["Evaluation
+ROC-AUC • Ablation • Cold Start"]
